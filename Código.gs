@@ -120,13 +120,20 @@ function getCursos(userEmail) {
     const progreso = getDataAsJson(openSheet_('Progreso')).filter(p => normalizeEmail_(p.Email) === emailN);
 
     return cursos.map(c => {
-      const userProg = progreso.find(p => String(p.CursoID) === String(c.CursoID));
-      const estado = safeStr_(userProg ? (userProg.Estado ?? userProg['Estado (completado/pendiente)']) : 'pendiente').toLowerCase();
+      const userProg = progreso.find(p => {
+        const pCid = String(p.CursoID || p.ID || p['Curso ID'] || p['#'] || Object.values(p)[1]);
+        return pCid === String(c.CursoID);
+      });
+      const estadoRaw = userProg ? (userProg.Estado || userProg['Estado (completado/pendiente)'] || Object.values(userProg)[2]) : 'pendiente';
+      const estado = safeStr_(estadoRaw).toLowerCase();
+      const nota = safeNumber_(userProg ? (userProg.Nota || userProg.Score || Object.values(userProg)[3]) : 0, 0);
+      const intentos = safeNumber_(userProg ? (userProg.Intentos || userProg.Attempts || Object.values(userProg)[4]) : 0, 0);
+
       return {
         ...c,
         status: estado || 'pendiente',
-        score: safeNumber_(userProg ? userProg.Nota : 0, 0),
-        attempts: safeNumber_(userProg ? userProg.Intentos : 0, 0)
+        score: nota,
+        attempts: intentos
       };
     });
   } catch (error) {
@@ -146,7 +153,9 @@ function saveQuizResult(email, cursoId, score, passed) {
     let found = false;
 
     for (let i = 1; i < data.length; i++) {
-      if (normalizeEmail_(data[i][0]) === e && String(data[i][1]) === cId) {
+      const rowEmail = normalizeEmail_(data[i][0]);
+      const rowCid = String(data[i][1]);
+      if (rowEmail === e && rowCid === cId) {
         const prevAttempts = safeNumber_(data[i][4], 0);
         const attempts = prevAttempts + 1;
         sheet.getRange(i + 1, 3).setValue(passed ? 'completado' : 'pendiente'); 
@@ -157,12 +166,16 @@ function saveQuizResult(email, cursoId, score, passed) {
       }
     }
     if (!found) {
+      // Garantizar encabezados en fila 1 si está vacía
+      if (data.length === 0 || !data[0][0]) {
+        sheet.getRange(1, 1, 1, 5).setValues([['Email', 'CursoID', 'Estado', 'Nota', 'Intentos']]).setFontWeight('bold');
+      }
       sheet.appendRow([e, cId, passed ? 'completado' : 'pendiente', sc, 1]);
     }
-    try { logAudit(e, 'Quiz Realizado: ' + cId, 5); } catch(e){}
-    return { status: 'saved' };
+    try { logAudit(e, 'Quiz Realizado: ' + cId + ' (Nota: ' + sc + ')', 5); } catch(e){}
+    return { status: 'success', score: sc, passed: passed };
   } catch (error) {
-    return { status: 'error' };
+    return { status: 'error', message: error.message };
   }
 }
 
@@ -188,14 +201,18 @@ function getDashboardMetrics(email, role) {
     const myAudit = privileged ? auditData : auditData.filter(a => normalizeEmail_(a.Email) === e);
 
     const completed = myProgress.filter(p => {
-      const estado = safeStr_(p.Estado ?? p['Estado (completado/pendiente)']).toLowerCase();
-      return estado === 'completado';
+      const estadoRaw = p.Estado || p['Estado (completado/pendiente)'] || Object.values(p)[2];
+      return safeStr_(estadoRaw).toLowerCase() === 'completado';
     }).length;
 
     const pending = Math.max(cursosData.length - completed, 0);
-    const avgScore = myProgress.length > 0 ? myProgress.reduce((acc, curr) => acc + safeNumber_(curr.Nota, 0), 0) / myProgress.length : 0;
-    const totalTime = myAudit.reduce((acc, curr) => acc + safeNumber_(curr.DuracionMinutos, 0), 0);
-    const auditLog = myAudit.slice().sort((a, b) => new Date(b.FechaHora) - new Date(a.FechaHora)).slice(0, 5);
+    const avgScore = myProgress.length > 0 ? myProgress.reduce((acc, curr) => {
+      const nota = curr.Nota || curr.Score || Object.values(curr)[3];
+      return acc + safeNumber_(nota, 0);
+    }, 0) / myProgress.length : 0;
+
+    const totalTime = myAudit.reduce((acc, curr) => acc + safeNumber_(curr.DuracionMinutos || curr.Duracion, 0), 0);
+    const auditLog = myAudit.slice().sort((a, b) => new Date(b.FechaHora || b.Fecha) - new Date(a.FechaHora || a.Fecha)).slice(0, 5);
 
     return { completedCourses: completed, pendingCourses: pending, totalCourses: cursosData.length, averageScore: avgScore.toFixed(1), timeSpent: totalTime, auditLog: auditLog };
   } catch (error) {

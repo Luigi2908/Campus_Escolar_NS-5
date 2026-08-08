@@ -927,6 +927,26 @@
         navigate('classroom');
       }
 
+      function getEmbedUrl(url) {
+        if (!url) return '';
+        let u = String(url).trim();
+        if (u.includes('youtube.com/watch')) {
+          const match = u.match(/[?&]v=([^&]+)/);
+          if (match) return `https://www.youtube.com/embed/${match[1]}`;
+        }
+        if (u.includes('youtu.be/')) {
+          const parts = u.split('youtu.be/')[1];
+          if (parts) {
+            const id = parts.split('?')[0].split('/')[0];
+            if (id) return `https://www.youtube.com/embed/${id}`;
+          }
+        }
+        if (u.includes('drive.google.com/file/d/')) {
+          return u.replace(/\/view.*$/, '/preview').replace(/\/edit.*$/, '/preview');
+        }
+        return u;
+      }
+
       function renderClassroom(course) {
         const status = (course.status || 'pendiente').toLowerCase();
         const isCompleted = status === 'completado';
@@ -947,9 +967,25 @@
         document.getElementById('classroom-score').textContent = Number(course.score || 0);
         document.getElementById('classroom-attempts').textContent = Number(course.attempts || 0);
 
-        document.getElementById('classroom-frame').src = course.EnlaceContenido || '';
+        const frame = document.getElementById('classroom-frame');
+        const embedUrl = getEmbedUrl(course.EnlaceContenido);
+        if (embedUrl) {
+          frame.src = embedUrl;
+          frame.style.display = 'block';
+        } else {
+          frame.src = 'about:blank';
+          frame.style.display = 'none';
+        }
 
-        document.getElementById('btn-open-resource').onclick = () => { if (course.EnlaceContenido) window.open(course.EnlaceContenido, '_blank', 'noopener'); };
+        const rawLink = (course.EnlaceContenido || '').trim();
+        document.getElementById('btn-open-resource').onclick = () => {
+          if (rawLink) {
+            window.open(rawLink, '_blank', 'noopener');
+          } else {
+            showToast('Este curso no tiene un enlace de recurso configurado', 'warning');
+          }
+        };
+
         document.getElementById('btn-start-quiz').onclick = () => {
           document.getElementById('modal').classList.remove('hidden');
           document.getElementById('modal-title').textContent = 'Evaluación del Curso';
@@ -1106,12 +1142,41 @@
             <h2 class="text-4xl font-bold text-gray-800 mb-2">${score}/100</h2>
             <p class="text-lg text-gray-600 mb-2">${passed ? '¡Felicidades! Has aprobado la evaluación.' : 'No alcanzaste el puntaje mínimo (' + minScore + '%).'}</p>
             <p class="text-sm text-gray-500 mb-6">Respuestas correctas: ${earnedPoints} de ${totalPoints} puntos</p>
-            <button onclick="closeModal(); navigate('dashboard');" class="bg-gray-800 text-white px-8 py-3 rounded-xl hover:bg-gray-900 transition font-bold shadow-lg">
+            <div id="quiz-save-status" class="text-sm font-semibold text-blue-600 mb-4"><i class="fas fa-spinner fa-spin mr-2"></i>Guardando resultado en el servidor...</div>
+            <button id="btn-quiz-done" disabled onclick="closeModal(); navigate('dashboard');" class="bg-gray-800 text-white px-8 py-3 rounded-xl hover:bg-gray-900 transition font-bold shadow-lg opacity-50 cursor-not-allowed">
               Volver al Panel
             </button>
           </div>`;
 
-        google.script.run.saveQuizResult(currentUser.email, cursoId, score, passed);
+        google.script.run
+          .withSuccessHandler(res => {
+            const statusEl = document.getElementById('quiz-save-status');
+            const btnEl = document.getElementById('btn-quiz-done');
+            if (statusEl) {
+              statusEl.className = 'text-sm font-semibold text-green-600 mb-4';
+              statusEl.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Resultado guardado correctamente';
+            }
+            if (btnEl) {
+              btnEl.disabled = false;
+              btnEl.className = 'bg-gray-800 text-white px-8 py-3 rounded-xl hover:bg-gray-900 transition font-bold shadow-lg cursor-pointer';
+            }
+            // Recargar datos y actualizar cache
+            loadCoursesData();
+            loadDashboardData();
+          })
+          .withFailureHandler(err => {
+            const statusEl = document.getElementById('quiz-save-status');
+            const btnEl = document.getElementById('btn-quiz-done');
+            if (statusEl) {
+              statusEl.className = 'text-sm font-semibold text-red-600 mb-4';
+              statusEl.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Error al guardar resultado';
+            }
+            if (btnEl) {
+              btnEl.disabled = false;
+              btnEl.className = 'bg-gray-800 text-white px-8 py-3 rounded-xl hover:bg-gray-900 transition font-bold shadow-lg cursor-pointer';
+            }
+          })
+          .saveQuizResult(currentUser.email, cursoId, score, passed);
       }
 
       function startQuizTimer(minutes, cursoId) {
