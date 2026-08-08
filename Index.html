@@ -1160,7 +1160,7 @@
         return u;
       }
 
-      function renderGroupedClassroom(gc, moduleIdToSelect) {
+      function renderGroupedClassroom(gc, moduleIdToSelect, preventSelect = false) {
         // Headers and Progress Bar
         document.getElementById('classroom-title').textContent = gc.Titulo;
         document.getElementById('classroom-subtitle').textContent = gc.modulos.length + ' Módulo(s)';
@@ -1228,11 +1228,12 @@
           prevCompleted = isCompleted;
         });
 
-        // Seleccionar visualmente el módulo indicado
-        selectModuleInClassroom(moduleIdToSelect);
+        if (!preventSelect) {
+          selectModuleInClassroom(moduleIdToSelect, true);
+        }
       }
 
-      function selectModuleInClassroom(moduleId) {
+      function selectModuleInClassroom(moduleId, preventRender = false) {
         currentModuleId = String(moduleId);
         const gc = groupedCoursesCache[currentCourseTitle];
         if (!gc) return;
@@ -1240,7 +1241,9 @@
         if (!course) return;
 
         // Actualizar UI activa en sidebar
-        renderGroupedClassroom(gc, moduleId); // re-render sidebar to update selected state and locks if needed
+        if (!preventRender) {
+          renderGroupedClassroom(gc, moduleId, true); // re-render sidebar to update selected state
+        }
 
         const tipo = (course.Tipo || '').toLowerCase();
         const typeEl = document.getElementById('classroom-type');
