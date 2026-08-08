@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+      .fade-in { animation: fadeIn 0.4s ease-in-out; }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      .nav-active { background-color: #374151; border-left: 4px solid #3b82f6; }
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: #f1f1f1; }
+      ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #555; }
+      .line-clamp-3{ display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+    </style>
+  </head>
+
+  <body class="bg-gray-100 font-sans text-gray-800 h-screen overflow-hidden">
+    <!-- 1. PANTALLA DE LOGIN -->
+    <div id="login-view" class="h-full flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
+      <div class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md fade-in relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-2 bg-blue-600"></div>
+        <div class="text-center mb-8">
+          <h1 class="text-4xl font-extrabold text-gray-800 tracking-tight">CAMPUS<span class="text-blue-600">VIRTUAL</span></h1>
+          <p class="text-gray-400 text-sm mt-2">Plataforma de Capacitación Corporativa</p>
+        </div>
+        <form id="login-form" onsubmit="handleLogin(event)">
+          <div class="mb-5">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Correo Corporativo</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500"><i class="fas fa-envelope"></i></span>
+              <input type="email" id="email" class="w-full pl-10 px-3 py-3 border rounded-lg focus:outline-none focus:border-blue-500 bg-gray-50" placeholder="ejemplo@empresa.com" required>
+            </div>
+          </div>
+          <div class="mb-8">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Contraseña</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500"><i class="fas fa-lock"></i></span>
+              <input type="password" id="password" class="w-full pl-10 px-3 py-3 border rounded-lg focus:outline-none focus:border-blue-500 bg-gray-50" placeholder="••••••••" required>
+            </div>
+          </div>
+          <button type="submit" id="btn-login" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transform hover:scale-[1.02] transition duration-200 shadow-lg">
+            INGRESAR AL SISTEMA
+          </button>
+          <p id="login-error" class="text-red-500 text-sm mt-4 text-center hidden bg-red-50 p-2 rounded border border-red-200"></p>
+        </form>
+      </div>
+    </div>
+
+    <!-- 2. PANTALLA PRINCIPAL (APP) -->
+    <div id="app-view" class="flex h-full hidden">
+      <!-- SIDEBAR -->
+      <aside class="w-64 bg-gray-900 text-white flex flex-col shadow-2xl z-10">
+        <div class="h-20 flex items-center justify-center border-b border-gray-800 bg-gray-900">
+          <i class="fas fa-graduation-cap text-blue-500 text-2xl mr-2"></i>
+          <span class="text-xl font-bold tracking-wider">LMS CORP</span>
+        </div>
+        <div class="p-6 border-b border-gray-800 flex items-center space-x-4 bg-gray-800/50">
+          <img id="user-avatar" src="" class="h-12 w-12 rounded-full border-2 border-blue-500 shadow-md">
+          <div class="overflow-hidden">
+            <p id="user-name" class="font-bold text-sm truncate">Usuario</p>
+            <span id="user-role" class="text-xs bg-blue-600 px-2 py-0.5 rounded-full text-white uppercase tracking-wide">Rol</span>
+          </div>
+        </div>
+        <nav class="flex-1 py-6 space-y-1">
+          <button id="nav-dashboard" type="button" onclick="navigate('dashboard'); return false;" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 border-l-4 border-transparent">
+            <i class="fas fa-chart-pie w-6"></i> <span class="font-medium">Dashboard</span>
+          </button>
+          <button id="nav-courses" type="button" onclick="navigate('courses'); return false;" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 border-l-4 border-transparent">
+            <i class="fas fa-laptop-code w-6"></i> <span class="font-medium">Mis Cursos</span>
+          </button>
+          <button id="nav-audit" type="button" onclick="navigate('audit'); return false;" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 border-l-4 border-transparent hidden">
+            <i class="fas fa-shield-alt w-6"></i> <span class="font-medium">Auditoría</span>
+          </button>
+        </nav>
+        <div class="p-4 border-t border-gray-800">
+          <button onclick="logout()" class="w-full flex items-center justify-center space-x-2 text-gray-400 hover:text-red-400 transition duration-200 py-2">
+            <i class="fas fa-sign-out-alt"></i> <span>Cerrar Sesión</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <main class="flex-1 overflow-y-auto bg-gray-100 p-8 relative">
+        <header class="flex justify-between items-center mb-8">
+          <h2 id="page-title" class="text-3xl font-bold text-gray-800">Bienvenido</h2>
+          <div class="text-sm text-gray-500" id="current-date"></div>
+        </header>
+
+        <!-- DASHBOARD -->
+        <div id="view-dashboard" class="view-section fade-in hidden">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border-b-4 border-blue-500">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="text-gray-500 text-sm font-medium uppercase">Cursos Completados</p>
+                  <h3 class="text-4xl font-bold text-gray-800 mt-2" id="kpi-completed">-</h3>
+                </div>
+                <div class="p-3 bg-blue-100 rounded-full text-blue-600"><i class="fas fa-check-circle fa-2x"></i></div>
+              </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border-b-4 border-green-500">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="text-gray-500 text-sm font-medium uppercase">Promedio Notas</p>
+                  <h3 class="text-4xl font-bold text-gray-800 mt-2" id="kpi-score">-</h3>
+                </div>
+                <div class="p-3 bg-green-100 rounded-full text-green-600"><i class="fas fa-star fa-2x"></i></div>
+              </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border-b-4 border-purple-500">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="text-gray-500 text-sm font-medium uppercase">Tiempo Aprendizaje</p>
+                  <h3 class="text-4xl font-bold text-gray-800 mt-2" id="kpi-time">-</h3>
+                </div>
+                <div class="p-3 bg-purple-100 rounded-full text-purple-600"><i class="fas fa-clock fa-2x"></i></div>
+              </div>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+              <h4 class="font-bold text-gray-700 mb-6 border-b pb-2">Estado de Avance</h4>
+              <div class="h-64 flex justify-center">
+                <canvas id="progressChart"></canvas>
+              </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+              <h4 class="font-bold text-gray-700 mb-6 border-b pb-2">Última Actividad</h4>
+              <ul id="activity-log-list" class="space-y-4">
+                <li class="text-gray-500 text-center py-4">Cargando actividad...</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- CURSOS -->
+        <div id="view-courses" class="view-section hidden fade-in">
+          <div id="courses-loader" class="text-center py-10 hidden">
+            <i class="fas fa-circle-notch fa-spin fa-3x text-blue-600"></i>
+            <p class="mt-4 text-gray-600">Cargando material educativo...</p>
+          </div>
+          <div id="courses-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+        </div>
+
+        <!-- AULA -->
+        <div id="view-classroom" class="view-section hidden fade-in">
+          <div class="mb-6 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <button type="button" onclick="navigate('courses')" class="px-4 py-2 bg-white rounded-lg shadow-sm border hover:bg-gray-50 transition text-gray-700">
+                <i class="fas fa-arrow-left mr-2"></i> Volver a Cursos
+              </button>
+              <div>
+                <h3 id="classroom-title" class="text-2xl font-bold text-gray-800">Curso</h3>
+                <p id="classroom-subtitle" class="text-sm text-gray-500">Aula virtual</p>
+              </div>
+            </div>
+            <div id="classroom-status" class="text-xs font-bold px-3 py-1 rounded-full bg-gray-200 text-gray-700 uppercase tracking-wide">PENDIENTE</div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <aside class="lg:col-span-1 space-y-6">
+              <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-5 border-b bg-gray-50">
+                  <div class="flex items-center justify-between">
+                    <p class="text-xs uppercase tracking-wider text-gray-500 font-semibold">Información</p>
+                    <span id="classroom-type" class="text-xs font-bold px-2 py-1 rounded bg-blue-100 text-blue-700 uppercase">VIDEO</span>
+                  </div>
+                </div>
+                <div class="p-5 space-y-4">
+                  <div>
+                    <p class="text-xs text-gray-500 font-semibold uppercase">Unidad</p>
+                    <p id="classroom-unit" class="text-sm text-gray-800 font-medium">-</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-gray-500 font-semibold uppercase">Descripción</p>
+                    <p id="classroom-desc" class="text-sm text-gray-700 leading-relaxed">-</p>
+                  </div>
+                  <div class="grid grid-cols-2 gap-3 pt-2">
+                    <div class="bg-gray-50 border rounded-lg p-3">
+                      <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Nota</p>
+                      <p id="classroom-score" class="text-lg font-bold text-gray-800">0</p>
+                    </div>
+                    <div class="bg-gray-50 border rounded-lg p-3">
+                      <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Intentos</p>
+                      <p id="classroom-attempts" class="text-lg font-bold text-gray-800">0</p>
+                    </div>
+                  </div>
+                  <div class="pt-2 space-y-2">
+                    <button id="btn-open-resource" type="button" class="w-full bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-600 transition shadow">
+                      <i class="fas fa-up-right-from-square mr-2"></i> Abrir recurso
+                    </button>
+                    <button id="btn-start-quiz" type="button" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 transition shadow">
+                      <i class="fas fa-check-circle mr-2"></i> Realizar evaluación
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-5 border-b bg-gray-50">
+                  <p class="text-xs uppercase tracking-wider text-gray-500 font-semibold">Mis cursos</p>
+                </div>
+                <div id="classroom-course-list" class="max-h-[45vh] overflow-y-auto divide-y"></div>
+              </div>
+            </aside>
+            <section class="lg:col-span-3">
+              <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-5 border-b bg-gray-50 flex items-center justify-between">
+                  <p class="text-sm font-bold text-gray-700"><i class="fas fa-chalkboard-teacher mr-2 text-blue-600"></i>Contenido del curso</p>
+                </div>
+                <div class="p-4">
+                  <div class="w-full h-[65vh] bg-gray-100 rounded-lg overflow-hidden border">
+                    <iframe id="classroom-frame" class="w-full h-full" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <!-- AUDITORIA -->
+        <div id="view-audit" class="view-section hidden fade-in">
+          <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <h3 class="font-bold text-gray-700">Registro de Accesos y Actividad</h3>
+              <button onclick="navigate('audit')" class="text-blue-600 hover:text-blue-800 text-sm"><i class="fas fa-sync-alt"></i> Actualizar</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-gray-100 text-gray-600 text-xs uppercase tracking-wider">
+                    <th class="p-4 font-semibold border-b">Fecha & Hora</th>
+                    <th class="p-4 font-semibold border-b">Usuario</th>
+                    <th class="p-4 font-semibold border-b">Acción</th>
+                    <th class="p-4 font-semibold border-b text-right">Duración (min)</th>
+                  </tr>
+                </thead>
+                <tbody id="audit-table-body" class="text-sm divide-y divide-gray-100">
+                  <tr><td colspan="4" class="p-6 text-center text-gray-500">Cargando datos de auditoría...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- MODAL -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-70 hidden flex items-center justify-center z-50 backdrop-blur-sm p-4">
+      <div class="bg-white rounded-xl w-full max-w-4xl h-[85vh] flex flex-col shadow-2xl overflow-hidden relative">
+        <div class="flex justify-between items-center p-4 bg-gray-900 text-white">
+          <h3 id="modal-title" class="font-bold text-lg tracking-wide">Contenido</h3>
+          <button onclick="closeModal()" class="text-gray-300 hover:text-white transition"><i class="fas fa-times fa-lg"></i></button>
+        </div>
+        <div id="modal-body" class="flex-1 overflow-y-auto bg-gray-100 flex flex-col items-center"></div>
+      </div>
+    </div>
+
+    <script>
+      let currentUser = null;
+      let chartInstance = null;
+      let coursesCache = [];
+      let currentCourseId = null;
+
+      document.getElementById('current-date').textContent =
+        new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+      function handleLogin(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btn-login');
+        const error = document.getElementById('login-error');
+
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+        btn.disabled = true;
+        error.classList.add('hidden');
+
+        const email = document.getElementById('email').value;
+        const pass = document.getElementById('password').value;
+
+        // SE AGREGA withFailureHandler PARA EVITAR QUE SE QUEDE CARGANDO
+        google.script.run
+          .withSuccessHandler(res => {
+            if (res.status === 'success') {
+              currentUser = res.user;
+              initApp();
+            } else {
+              error.textContent = res.message;
+              error.classList.remove('hidden');
+              btn.innerHTML = 'INGRESAR AL SISTEMA';
+              btn.disabled = false;
+            }
+          })
+          .withFailureHandler(err => {
+             // Si el servidor falla crashea, mostrará esto en pantalla
+             error.textContent = 'Error de conexión: ' + (err.message || err);
+             error.classList.remove('hidden');
+             btn.innerHTML = 'INGRESAR AL SISTEMA';
+             btn.disabled = false;
+          })
+          .loginUser(email, pass);
+      }
+
+      function initApp() {
+        document.getElementById('login-view').classList.add('hidden');
+        document.getElementById('app-view').classList.remove('hidden');
+
+        document.getElementById('user-name').textContent = currentUser.name || '';
+        document.getElementById('user-role').textContent = (currentUser.role || '').toUpperCase();
+        document.getElementById('user-avatar').src = currentUser.avatar || '';
+
+        const role = (currentUser.role || '').toLowerCase().trim();
+        if (['administrador', 'gerente', 'supervisor'].includes(role)) {
+          document.getElementById('nav-audit').classList.remove('hidden');
+        }
+
+        navigate('dashboard');
+      }
+
+      function logout() { location.reload(); }
+
+      function navigate(viewName) {
+        const role = (currentUser?.role || '').toLowerCase().trim();
+        if (viewName === 'audit' && !['administrador','gerente','supervisor'].includes(role)) {
+          viewName = 'dashboard';
+        }
+
+        const navKey = (viewName === 'classroom') ? 'courses' : viewName;
+
+        document.querySelectorAll('nav [id^="nav-"]').forEach(el => el.classList.remove('nav-active'));
+        document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+
+        const navEl = document.getElementById('nav-' + navKey);
+        if (navEl) navEl.classList.add('nav-active');
+
+        const viewEl = document.getElementById('view-' + viewName);
+        if (viewEl) viewEl.classList.remove('hidden');
+
+        const titles = { dashboard: 'Panel de Control', courses: 'Catálogo de Cursos', classroom: 'Aula Virtual', audit: 'Auditoría del Sistema' };
+        document.getElementById('page-title').textContent = titles[viewName] || 'Campus Virtual';
+
+        if (viewName === 'dashboard') loadDashboardData();
+        if (viewName === 'courses') loadCoursesData();
+        if (viewName === 'audit') loadAuditData();
+      }
+
+      function loadDashboardData() {
+        google.script.run.withSuccessHandler(metrics => {
+          const completed = Number(metrics.completedCourses) || 0;
+          const pending = Number(metrics.pendingCourses) || 0;
+
+          animateValue("kpi-completed", 0, completed, 800);
+          document.getElementById('kpi-score').textContent = metrics.averageScore ?? '0.0';
+          document.getElementById('kpi-time').textContent = `${Number(metrics.timeSpent) || 0} min`;
+
+          const logList = document.getElementById('activity-log-list');
+          logList.innerHTML = '';
+          const logs = Array.isArray(metrics.auditLog) ? metrics.auditLog : [];
+          if (logs.length === 0) {
+            logList.innerHTML = '<li class="text-sm text-gray-500">Sin actividad reciente.</li>';
+          } else {
+            logs.forEach(log => {
+              const fecha = log.FechaHora ? new Date(log.FechaHora).toLocaleString('es-CO') : '';
+              const li = `<li class="flex items-center space-x-3 text-sm">
+                  <div class="h-2 w-2 rounded-full bg-blue-500"></div>
+                  <span class="text-gray-500 text-xs">${fecha}</span>
+                  <span class="text-gray-700 font-medium">${log.Accion || ''}</span>
+                </li>`;
+              logList.insertAdjacentHTML('beforeend', li);
+            });
+          }
+
+          const ctx = document.getElementById('progressChart').getContext('2d');
+          if (chartInstance) chartInstance.destroy();
+          chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: { labels: ['Completado', 'Pendiente'], datasets: [{ data: [completed, pending], backgroundColor: ['#3B82F6', '#E5E7EB'], borderWidth: 0 }] },
+            options: { cutout: '75%', responsive: true, maintainAspectRatio: false }
+          });
+        }).getDashboardMetrics(currentUser.email, currentUser.role);
+      }
+
+      function loadCoursesData() {
+        const grid = document.getElementById('courses-grid');
+        const loader = document.getElementById('courses-loader');
+        grid.innerHTML = ''; loader.classList.remove('hidden');
+
+        google.script.run.withSuccessHandler(courses => {
+          coursesCache = Array.isArray(courses) ? courses : [];
+          loader.classList.add('hidden');
+          if (!courses || courses.length === 0) {
+            grid.innerHTML = '<p class="text-gray-500 col-span-3 text-center">No hay cursos asignados.</p>';
+            return;
+          }
+          courses.forEach(c => {
+            const isCompleted = (c.status || '').toLowerCase() === 'completado';
+            const statusClass = isCompleted ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
+            const statusIcon = isCompleted ? 'fa-check-circle' : 'fa-hourglass-half';
+            const iconType = c.Tipo === 'video' ? 'fa-play-circle' : 'fa-file-pdf';
+            const bgHeader = c.Tipo === 'video' ? 'bg-indigo-600' : 'bg-red-600';
+
+            const card = `<div class="bg-white rounded-xl shadow-sm hover:shadow-xl transition duration-300 overflow-hidden border border-gray-100 flex flex-col h-full">
+                <div class="h-40 ${bgHeader} relative flex items-center justify-center text-white">
+                  <i class="fas ${iconType} fa-4x opacity-80"></i>
+                  <div class="absolute top-4 right-4 bg-white/20 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold uppercase">${c.Unidad || ''}</div>
+                </div>
+                <div class="p-6 flex-1 flex flex-col">
+                  <h3 class="font-bold text-lg text-gray-800 mb-2 leading-tight">${c.Titulo || ''}</h3>
+                  <p class="text-gray-500 text-sm mb-4 line-clamp-3 flex-1">${c.Descripcion || ''}</p>
+                  <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
+                    <span class="flex items-center space-x-1 text-xs font-bold px-2 py-1 rounded-full ${statusClass}">
+                      <i class="fas ${statusIcon}"></i><span>${String(c.status || 'pendiente').toUpperCase()}</span>
+                    </span>
+                    <button onclick="openCourse(${JSON.stringify(c.CursoID)})" class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition shadow-lg">Acceder</button>
+                  </div>
+                </div>
+              </div>`;
+            grid.insertAdjacentHTML('beforeend', card);
+          });
+        }).getCursos(currentUser.email);
+      }
+
+      function loadAuditData() {
+        const tbody = document.getElementById('audit-table-body');
+        tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center"><i class="fas fa-spinner fa-spin fa-2x text-blue-500"></i></td></tr>';
+
+        google.script.run.withSuccessHandler(logs => {
+          tbody.innerHTML = '';
+          if (!logs || logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-gray-500">No hay registros disponibles.</td></tr>';
+            return;
+          }
+          logs.forEach(log => {
+            const fechaStr = log.Fecha ? new Date(log.Fecha).toLocaleString('es-CO') : '';
+            let actionColor = 'text-gray-700';
+            if ((log.Accion || '').includes('Login')) actionColor = 'text-blue-600 font-semibold';
+            if ((log.Accion || '').includes('Quiz')) actionColor = 'text-green-600 font-semibold';
+
+            const row = `<tr class="hover:bg-gray-50 transition">
+                <td class="p-4 border-b text-gray-600">${fechaStr}</td>
+                <td class="p-4 border-b font-medium text-gray-800">${log.Usuario || ''}</td>
+                <td class="p-4 border-b ${actionColor}">${log.Accion || ''}</td>
+                <td class="p-4 border-b text-right text-gray-500">${(Number(log.Duracion) || 0) > 0 ? (Number(log.Duracion) + ' m') : '-'}</td>
+              </tr>`;
+            tbody.insertAdjacentHTML('beforeend', row);
+          });
+        }).getAuditData(currentUser.email, currentUser.role);
+      }
+
+      function openCourse(cursoId) {
+        const id = String(cursoId);
+        currentCourseId = id;
+        const course = (coursesCache || []).find(c => String(c.CursoID) === id);
+        if (!course) { loadCoursesData(); alert('No se encontró el curso. Intenta de nuevo.'); return; }
+        renderClassroom(course);
+        navigate('classroom');
+      }
+
+      function renderClassroom(course) {
+        const status = (course.status || 'pendiente').toLowerCase();
+        const isCompleted = status === 'completado';
+
+        document.getElementById('classroom-title').textContent = course.Titulo || 'Curso';
+        document.getElementById('classroom-subtitle').textContent = course.Unidad ? `Unidad: ${course.Unidad}` : 'Aula virtual';
+        const badge = document.getElementById('classroom-status');
+        badge.textContent = status.toUpperCase();
+        badge.className = 'text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide ' + (isCompleted ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700');
+
+        const typeEl = document.getElementById('classroom-type');
+        const tipo = (course.Tipo || '').toLowerCase();
+        typeEl.textContent = (tipo || 'recurso').toUpperCase();
+        typeEl.className = 'text-xs font-bold px-2 py-1 rounded uppercase ' + (tipo === 'video' ? 'bg-indigo-100 text-indigo-700' : 'bg-red-100 text-red-700');
+
+        document.getElementById('classroom-unit').textContent = course.Unidad || '-';
+        document.getElementById('classroom-desc').textContent = course.Descripcion || '-';
+        document.getElementById('classroom-score').textContent = Number(course.score || 0);
+        document.getElementById('classroom-attempts').textContent = Number(course.attempts || 0);
+
+        document.getElementById('classroom-frame').src = course.EnlaceContenido || '';
+
+        document.getElementById('btn-open-resource').onclick = () => { if (course.EnlaceContenido) window.open(course.EnlaceContenido, '_blank', 'noopener'); };
+        document.getElementById('btn-start-quiz').onclick = () => {
+          document.getElementById('modal').classList.remove('hidden');
+          document.getElementById('modal-title').textContent = 'Evaluación del Curso';
+          startQuiz(String(course.CursoID));
+        };
+
+        const list = document.getElementById('classroom-course-list');
+        list.innerHTML = '';
+        (coursesCache || []).forEach(c => {
+          const cid = String(c.CursoID);
+          const st = (c.status || 'pendiente').toLowerCase();
+          const active = cid === String(course.CursoID);
+          const icon = (st === 'completado') ? 'fa-check-circle text-green-600' : 'fa-circle text-gray-300';
+          const row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'w-full text-left p-4 hover:bg-gray-50 transition flex items-start space-x-3 ' + (active ? 'bg-blue-50' : '');
+          row.innerHTML = `<i class="fas ${icon} mt-1"></i>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between space-x-2">
+                <p class="font-semibold text-sm text-gray-800 truncate">${c.Titulo || 'Curso'}</p>
+                <span class="text-[10px] px-2 py-0.5 rounded-full ${st === 'completado' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'} uppercase">${st}</span>
+              </div>
+              <p class="text-xs text-gray-500 truncate">${c.Unidad || ''}</p>
+            </div>`;
+          row.onclick = () => openCourse(cid);
+          list.appendChild(row);
+        });
+      }
+
+      function startQuiz(cursoId) {
+        const body = document.getElementById('modal-body');
+        body.innerHTML = `
+          <div class="max-w-2xl w-full bg-white p-8 rounded-lg shadow-sm my-auto">
+            <div class="flex items-center space-x-3 mb-6">
+              <span class="bg-blue-100 text-blue-600 p-2 rounded-lg"><i class="fas fa-question-circle fa-lg"></i></span>
+              <h3 class="font-bold text-2xl text-gray-800">Evaluación Final</h3>
+            </div>
+            <div class="space-y-6">
+              <div>
+                <p class="font-semibold text-gray-700 mb-2">1. Según el material visto, ¿cuál es el paso más importante?</p>
+                <select id="q1" class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                  <option value="0">Seleccione una respuesta...</option>
+                  <option value="1">Planificación y Análisis</option>
+                  <option value="0">Ignorar los protocolos</option>
+                </select>
+              </div>
+              <div>
+                <p class="font-semibold text-gray-700 mb-2">2. ¿Qué herramienta se recomienda utilizar?</p>
+                <select id="q2" class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                  <option value="0">Seleccione una respuesta...</option>
+                  <option value="0">Lápiz y papel</option>
+                  <option value="1">Software de Gestión en la Nube</option>
+                </select>
+              </div>
+            </div>
+            <button onclick="submitQuiz(${JSON.stringify(cursoId)})" class="mt-8 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition shadow-md">
+              Enviar Respuestas
+            </button>
+          </div>
+        `;
+      }
+
+      function submitQuiz(cursoId) {
+        const q1 = document.getElementById('q1').value;
+        const q2 = document.getElementById('q2').value;
+        let score = 0;
+        if (q1 === '1') score += 50;
+        if (q2 === '1') score += 50;
+
+        const passed = score >= 70;
+        const color = passed ? 'text-green-600' : 'text-red-600';
+        const icon = passed ? 'fa-trophy' : 'fa-times-circle';
+
+        const body = document.getElementById('modal-body');
+        body.innerHTML = `
+          <div class="flex flex-col items-center justify-center h-full text-center p-8">
+            <i class="fas ${icon} fa-5x ${color} mb-4 animate-bounce"></i>
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">Tu Calificación: ${score}/100</h2>
+            <p class="text-lg text-gray-600 mb-6">${passed ? '¡Felicidades! Has aprobado la unidad.' : 'No has alcanzado el puntaje mínimo. Inténtalo de nuevo.'}</p>
+            <button onclick="closeModal(); navigate('dashboard');" class="bg-gray-800 text-white px-6 py-2 rounded hover:bg-gray-900 transition">
+              Volver al Panel
+            </button>
+          </div>
+        `;
+        google.script.run.saveQuizResult(currentUser.email, cursoId, score, passed);
+      }
+
+      function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+
+      function animateValue(id, start, end, duration) {
+        start = Number(start) || 0; end = Number(end) || 0;
+        const obj = document.getElementById(id); if (!obj) return;
+        if (start === end) { obj.textContent = String(end); return; }
+        const range = end - start; const increment = end > start ? 1 : -1;
+        const steps = Math.abs(range); const stepTime = Math.max(20, Math.floor((duration || 800) / (steps || 1)));
+        let current = start;
+        const timer = setInterval(() => {
+          current += increment; obj.textContent = String(current);
+          if (current === end) clearInterval(timer);
+        }, stepTime);
+      }
+    </script>
+  </body>
+</html>
