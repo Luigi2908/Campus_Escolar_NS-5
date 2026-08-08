@@ -2,67 +2,102 @@
 <html>
   <head>
     <base target="_top">
+    <!-- Google Fonts: Quicksand -->
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ['Quicksand', 'sans-serif'] },
+            colors: {
+              pastel: {
+                bg: '#FAF8F5',
+                purple: '#E9D8FD',
+                purpleDark: '#9F7AEA',
+                pink: '#FED7E2',
+                pinkDark: '#F687B3',
+                green: '#C6F6D5',
+                greenDark: '#68D391',
+                yellow: '#FEFCBF',
+                yellowDark: '#F6E05E'
+              }
+            },
+            boxShadow: {
+              'soft': '0 20px 50px -12px rgba(0, 0, 0, 0.05)',
+              'inner-soft': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.03)'
+            }
+          }
+        }
+      }
+    </script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
+      body { background-color: #FAF8F5; font-family: 'Quicksand', sans-serif; }
       .fade-in { animation: fadeIn 0.4s ease-in-out; }
       @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-      .nav-active { background-color: #374151; border-left: 4px solid #3b82f6; }
+      .nav-active { background-color: #F3E8FF; color: #7E22CE; border-radius: 1rem; font-weight: 700; }
       ::-webkit-scrollbar { width: 8px; }
-      ::-webkit-scrollbar-track { background: #f1f1f1; }
-      ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
-      ::-webkit-scrollbar-thumb:hover { background: #555; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #CBD5E1; }
       .line-clamp-3{ display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
 
       /* Admin styles */
       .admin-table th { position: sticky; top: 0; z-index: 1; }
-      .admin-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+      .admin-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
       .toast-enter { animation: toastIn 0.4s ease-out; }
       .toast-exit { animation: toastOut 0.3s ease-in forwards; }
       @keyframes toastIn { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
       @keyframes toastOut { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(20px) scale(0.95); } }
-      .question-card { transition: all 0.2s ease; }
-      .question-card:hover { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(59,130,246,0.08); }
+      .question-card { transition: all 0.3s ease; border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border-radius: 1.5rem; }
+      .question-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.06); }
       .pulse-dot { animation: pulseDot 2s infinite; }
       @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
     </style>
   </head>
 
-  <body class="bg-gray-100 font-sans text-gray-800 h-screen overflow-hidden">
+  <body class="bg-pastel-bg text-gray-700 h-screen overflow-hidden antialiased">
     <!-- ============================================ -->
     <!-- 1. PANTALLA DE LOGIN                         -->
     <!-- ============================================ -->
-    <div id="login-view" class="h-full flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
-      <div class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md fade-in relative overflow-hidden">
-        <div class="absolute top-0 left-0 w-full h-2 bg-blue-600"></div>
+    <div id="login-view" class="h-full flex items-center justify-center bg-pastel-bg relative">
+      <!-- Decoración de fondo suave -->
+      <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-pastel-purple rounded-full mix-blend-multiply filter blur-3xl opacity-70"></div>
+      <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-pastel-pink rounded-full mix-blend-multiply filter blur-3xl opacity-70"></div>
+      
+      <div class="bg-white/80 backdrop-blur-xl p-10 rounded-[2.5rem] shadow-soft w-full max-w-md fade-in relative overflow-hidden border border-white/50 z-10">
         <div class="text-center mb-8">
-          <h1 class="text-4xl font-extrabold text-gray-800 tracking-tight">CAMPUS<span class="text-blue-600">VIRTUAL</span></h1>
-          <p class="text-gray-400 text-sm mt-2">Plataforma de Capacitación Corporativa</p>
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-pastel-purple mb-4 text-pastel-purpleDark text-3xl shadow-inner-soft">
+            <i class="fas fa-graduation-cap"></i>
+          </div>
+          <h1 class="text-3xl font-bold text-gray-800 tracking-tight">Bienvenido 👋</h1>
+          <p class="text-gray-500 text-sm mt-2">Plataforma de Capacitación</p>
         </div>
         <form id="login-form" onsubmit="handleLogin(event)">
           <div class="mb-5">
-            <label class="block text-gray-700 text-sm font-bold mb-2">Correo Corporativo</label>
+            <label class="block text-gray-600 text-sm font-bold mb-2 ml-1">Correo Electrónico</label>
             <div class="relative">
-              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500"><i class="fas fa-envelope"></i></span>
-              <input type="email" id="email" class="w-full pl-10 px-3 py-3 border rounded-lg focus:outline-none focus:border-blue-500 bg-gray-50" placeholder="ejemplo@empresa.com" required>
+              <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400"><i class="fas fa-envelope"></i></span>
+              <input type="email" id="email" class="w-full pl-12 px-4 py-4 rounded-2xl bg-gray-50/50 border-none focus:ring-4 focus:ring-pastel-purple/50 focus:bg-white transition-all shadow-inner-soft" placeholder="ejemplo@empresa.com" required>
             </div>
           </div>
           <div class="mb-8">
-            <label class="block text-gray-700 text-sm font-bold mb-2">Contraseña</label>
+            <label class="block text-gray-600 text-sm font-bold mb-2 ml-1">Contraseña</label>
             <div class="relative">
-              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500"><i class="fas fa-lock"></i></span>
-              <input type="password" id="password" class="w-full pl-10 px-3 py-3 border rounded-lg focus:outline-none focus:border-blue-500 bg-gray-50" placeholder="••••••••" required>
+              <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400"><i class="fas fa-lock"></i></span>
+              <input type="password" id="password" class="w-full pl-12 px-4 py-4 rounded-2xl bg-gray-50/50 border-none focus:ring-4 focus:ring-pastel-purple/50 focus:bg-white transition-all shadow-inner-soft" placeholder="••••••••" required>
             </div>
           </div>
-          <button type="submit" id="btn-login" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transform hover:scale-[1.02] transition duration-200 shadow-lg">
-            INGRESAR AL SISTEMA
+          <button type="submit" id="btn-login" class="w-full bg-pastel-purpleDark text-white font-bold py-4 rounded-2xl hover:opacity-90 transform hover:-translate-y-1 transition duration-300 shadow-[0_10px_20px_rgba(159,122,234,0.3)]">
+            Ingresar al Sistema
           </button>
-          <p id="login-error" class="text-red-500 text-sm mt-4 text-center hidden bg-red-50 p-2 rounded border border-red-200"></p>
+          <p id="login-error" class="text-red-500 text-sm mt-4 text-center hidden bg-red-50 p-3 rounded-xl"></p>
         </form>
       </div>
     </div>
@@ -70,119 +105,152 @@
     <!-- ============================================ -->
     <!-- 2. PANTALLA PRINCIPAL (APP)                  -->
     <!-- ============================================ -->
-    <div id="app-view" class="flex h-full hidden relative">
-      <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-20 hidden transition-opacity duration-300 opacity-0"></div>
+    <div id="app-view" class="flex h-full hidden relative bg-pastel-bg p-2 sm:p-4 md:p-6 lg:p-8">
+      <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-gray-900/20 backdrop-blur-sm z-20 hidden transition-opacity duration-300 opacity-0"></div>
+      
       <!-- SIDEBAR -->
-      <aside id="sidebar" class="w-64 bg-gray-900 text-white flex flex-col shadow-2xl z-30 fixed inset-y-0 left-0 transform transition-transform duration-300 -translate-x-full">
-        <div class="h-20 flex items-center justify-center border-b border-gray-800 bg-gray-900">
-          <i class="fas fa-graduation-cap text-blue-500 text-2xl mr-2"></i>
-          <span class="text-xl font-bold tracking-wider">LMS CORP</span>
+      <aside id="sidebar" class="w-64 bg-transparent text-gray-600 flex flex-col z-30 fixed lg:relative lg:translate-x-0 inset-y-0 left-0 transform transition-transform duration-300 -translate-x-full lg:mr-6">
+        <div class="h-24 flex items-center justify-start px-6 pt-4">
+          <div class="bg-white p-2 rounded-xl shadow-sm mr-3 text-pastel-purpleDark">
+             <i class="fas fa-graduation-cap text-2xl"></i>
+          </div>
+          <span class="text-xl font-extrabold tracking-tight text-gray-800">LMS Corp</span>
         </div>
-        <div class="p-6 border-b border-gray-800 flex items-center space-x-4 bg-gray-800/50">
-          <img id="user-avatar" src="" class="h-12 w-12 rounded-full border-2 border-blue-500 shadow-md">
+        
+        <div class="px-6 py-6 flex items-center space-x-4">
+          <img id="user-avatar" src="" class="h-14 w-14 rounded-2xl border-4 border-white shadow-soft object-cover bg-white">
           <div class="overflow-hidden">
-            <p id="user-name" class="font-bold text-sm truncate">Usuario</p>
-            <span id="user-role" class="text-xs bg-blue-600 px-2 py-0.5 rounded-full text-white uppercase tracking-wide">Rol</span>
+            <p id="user-name" class="font-bold text-sm text-gray-800 truncate">Usuario</p>
+            <span id="user-role" class="text-[10px] bg-pastel-purple text-pastel-purpleDark font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">Rol</span>
           </div>
         </div>
-        <nav class="flex-1 py-4 space-y-1 overflow-y-auto">
+
+        <nav class="flex-1 px-4 py-2 space-y-1.5 overflow-y-auto">
           <!-- Navegación principal -->
-          <div class="px-6 py-2">
-            <p class="text-[10px] text-gray-500 font-semibold uppercase tracking-widest">Principal</p>
+          <div class="px-3 py-2 mt-2">
+            <p class="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Principal</p>
           </div>
-          <button id="nav-dashboard" type="button" onclick="navigate('dashboard'); return false;" class="w-full flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 border-l-4 border-transparent">
-            <i class="fas fa-chart-pie w-6"></i> <span class="font-medium">Dashboard</span>
+          <button id="nav-dashboard" type="button" onclick="navigate('dashboard'); return false;" class="w-full flex items-center px-4 py-3 text-gray-500 hover:bg-white hover:text-gray-800 hover:shadow-sm rounded-2xl transition-all duration-200">
+            <i class="fas fa-chart-pie w-8 text-center"></i> <span class="font-bold text-sm">Dashboard</span>
           </button>
-          <button id="nav-courses" type="button" onclick="navigate('courses'); return false;" class="w-full flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 border-l-4 border-transparent">
-            <i class="fas fa-laptop-code w-6"></i> <span class="font-medium">Mis Cursos</span>
+          <button id="nav-courses" type="button" onclick="navigate('courses'); return false;" class="w-full flex items-center px-4 py-3 text-gray-500 hover:bg-white hover:text-gray-800 hover:shadow-sm rounded-2xl transition-all duration-200">
+            <i class="fas fa-laptop-code w-8 text-center"></i> <span class="font-bold text-sm">Mis Cursos</span>
           </button>
-          <button id="nav-audit" type="button" onclick="navigate('audit'); return false;" class="w-full flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 border-l-4 border-transparent hidden">
-            <i class="fas fa-shield-alt w-6"></i> <span class="font-medium">Auditoría</span>
+          <button id="nav-audit" type="button" onclick="navigate('audit'); return false;" class="w-full flex items-center px-4 py-3 text-gray-500 hover:bg-white hover:text-gray-800 hover:shadow-sm rounded-2xl transition-all duration-200 hidden">
+            <i class="fas fa-shield-alt w-8 text-center"></i> <span class="font-bold text-sm">Auditoría</span>
           </button>
 
           <!-- Navegación admin (oculta por defecto) -->
           <div id="admin-nav-section" class="hidden">
-            <div class="px-6 pt-4 pb-2 border-t border-gray-800 mt-2">
-              <p class="text-[10px] text-gray-500 font-semibold uppercase tracking-widest">Administración</p>
+            <div class="px-3 pt-6 pb-2">
+              <p class="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Administración</p>
             </div>
-            <button id="nav-admin-dashboard" type="button" onclick="navigate('admin-dashboard'); return false;" class="w-full flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 border-l-4 border-transparent">
-              <i class="fas fa-tachometer-alt w-6"></i> <span class="font-medium">Panel Admin</span>
+            <button id="nav-admin-dashboard" type="button" onclick="navigate('admin-dashboard'); return false;" class="w-full flex items-center px-4 py-3 text-gray-500 hover:bg-white hover:text-gray-800 hover:shadow-sm rounded-2xl transition-all duration-200">
+              <i class="fas fa-tachometer-alt w-8 text-center"></i> <span class="font-bold text-sm">Panel Admin</span>
             </button>
-            <button id="nav-admin-courses" type="button" onclick="navigate('admin-courses'); return false;" class="w-full flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 border-l-4 border-transparent">
-              <i class="fas fa-book w-6"></i> <span class="font-medium">Gestión Cursos</span>
+            <button id="nav-admin-courses" type="button" onclick="navigate('admin-courses'); return false;" class="w-full flex items-center px-4 py-3 text-gray-500 hover:bg-white hover:text-gray-800 hover:shadow-sm rounded-2xl transition-all duration-200">
+              <i class="fas fa-book w-8 text-center"></i> <span class="font-bold text-sm">Cursos</span>
             </button>
-            <button id="nav-admin-users" type="button" onclick="navigate('admin-users'); return false;" class="w-full flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 border-l-4 border-transparent">
-              <i class="fas fa-users-cog w-6"></i> <span class="font-medium">Gestión Usuarios</span>
+            <button id="nav-admin-users" type="button" onclick="navigate('admin-users'); return false;" class="w-full flex items-center px-4 py-3 text-gray-500 hover:bg-white hover:text-gray-800 hover:shadow-sm rounded-2xl transition-all duration-200">
+              <i class="fas fa-users-cog w-8 text-center"></i> <span class="font-bold text-sm">Usuarios</span>
             </button>
-            <button id="nav-admin-reports" type="button" onclick="navigate('admin-reports'); return false;" class="w-full flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 border-l-4 border-transparent">
-              <i class="fas fa-file-export w-6"></i> <span class="font-medium">Reportes</span>
+            <button id="nav-admin-reports" type="button" onclick="navigate('admin-reports'); return false;" class="w-full flex items-center px-4 py-3 text-gray-500 hover:bg-white hover:text-gray-800 hover:shadow-sm rounded-2xl transition-all duration-200">
+              <i class="fas fa-file-export w-8 text-center"></i> <span class="font-bold text-sm">Reportes</span>
             </button>
           </div>
         </nav>
-        <div class="p-4 border-t border-gray-800">
-          <button onclick="logout()" class="w-full flex items-center justify-center space-x-2 text-gray-400 hover:text-red-400 transition duration-200 py-2">
+        <div class="p-6">
+          <button onclick="logout()" class="w-full flex items-center justify-center space-x-2 text-pastel-pinkDark bg-white hover:bg-pastel-pink hover:text-pink-800 shadow-sm rounded-2xl transition duration-300 py-3 font-bold text-sm">
             <i class="fas fa-sign-out-alt"></i> <span>Cerrar Sesión</span>
           </button>
         </div>
       </aside>
 
       <!-- MAIN CONTENT -->
-      <main class="flex-1 overflow-y-auto bg-gray-100 p-8 relative w-full transition-all duration-300">
-        <header class="flex flex-wrap justify-between items-center gap-4 mb-8">
+      <main class="flex-1 overflow-y-auto bg-white rounded-[2.5rem] shadow-soft p-8 sm:p-10 relative w-full h-full transition-all duration-300 flex flex-col">
+        <header class="flex flex-wrap justify-between items-center gap-4 mb-10">
           <div class="flex items-center gap-4">
-            <button onclick="toggleSidebar()" class="text-gray-600 hover:text-blue-600 hover:bg-white transition-all p-2.5 rounded-xl shadow-sm border border-gray-200 bg-gray-50 flex items-center justify-center">
+            <button onclick="toggleSidebar()" class="lg:hidden text-gray-500 hover:text-pastel-purpleDark hover:bg-pastel-purple transition-all p-3 rounded-2xl bg-gray-50 flex items-center justify-center">
               <i class="fas fa-bars fa-lg"></i>
             </button>
-            <h2 id="page-title" class="text-3xl font-bold text-gray-800 tracking-tight">Bienvenido</h2>
+            <div>
+              <h2 id="page-title" class="text-3xl sm:text-4xl font-extrabold text-gray-800 tracking-tight">Buenos días 👋</h2>
+              <p class="text-sm text-gray-400 mt-1 font-medium">Aquí está tu resumen de hoy.</p>
+            </div>
           </div>
-          <div class="text-sm font-medium text-gray-500 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100" id="current-date"></div>
+          <div class="flex items-center gap-3">
+             <div class="bg-gray-50 px-5 py-2.5 rounded-full text-sm font-bold text-gray-500 shadow-inner-soft" id="current-date"></div>
+          </div>
         </header>
 
         <!-- ═══════════════ DASHBOARD ═══════════════ -->
-        <div id="view-dashboard" class="view-section fade-in hidden">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-xl shadow-sm border-b-4 border-blue-500">
-              <div class="flex justify-between items-center">
-                <div>
-                  <p class="text-gray-500 text-sm font-medium uppercase">Cursos Completados</p>
-                  <h3 class="text-4xl font-bold text-gray-800 mt-2" id="kpi-completed">-</h3>
-                </div>
-                <div class="p-3 bg-blue-100 rounded-full text-blue-600"><i class="fas fa-check-circle fa-2x"></i></div>
+        <div id="view-dashboard" class="view-section fade-in hidden flex-1">
+          <!-- KPI Cards con colores pastel -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            <!-- Tareas/Cursos -->
+            <div class="bg-pastel-purple p-6 rounded-[2rem] shadow-sm relative overflow-hidden transition-transform hover:-translate-y-1">
+              <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/30 rounded-full blur-2xl"></div>
+              <p class="text-pastel-purpleDark text-sm font-bold mb-1">Cursos Completados</p>
+              <div class="flex items-end justify-between">
+                <h3 class="text-4xl font-extrabold text-gray-800" id="kpi-completed">-</h3>
+                <div class="w-12 h-12 bg-white/70 rounded-2xl flex items-center justify-center text-pastel-purpleDark shadow-sm"><i class="fas fa-check-circle fa-xl"></i></div>
               </div>
             </div>
 
-            <div class="bg-white p-6 rounded-xl shadow-sm border-b-4 border-green-500">
-              <div class="flex justify-between items-center">
-                <div>
-                  <p class="text-gray-500 text-sm font-medium uppercase">Promedio Notas</p>
-                  <h3 class="text-4xl font-bold text-gray-800 mt-2" id="kpi-score">-</h3>
-                </div>
-                <div class="p-3 bg-green-100 rounded-full text-green-600"><i class="fas fa-star fa-2x"></i></div>
+            <!-- Promedio -->
+            <div class="bg-pastel-pink p-6 rounded-[2rem] shadow-sm relative overflow-hidden transition-transform hover:-translate-y-1">
+               <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/30 rounded-full blur-2xl"></div>
+              <p class="text-pastel-pinkDark text-sm font-bold mb-1">Promedio Notas</p>
+              <div class="flex items-end justify-between">
+                <h3 class="text-4xl font-extrabold text-gray-800" id="kpi-score">-</h3>
+                <div class="w-12 h-12 bg-white/70 rounded-2xl flex items-center justify-center text-pastel-pinkDark shadow-sm"><i class="fas fa-star fa-xl"></i></div>
               </div>
             </div>
 
-            <div class="bg-white p-6 rounded-xl shadow-sm border-b-4 border-purple-500">
-              <div class="flex justify-between items-center">
-                <div>
-                  <p class="text-gray-500 text-sm font-medium uppercase">Tiempo Aprendizaje</p>
-                  <h3 class="text-4xl font-bold text-gray-800 mt-2" id="kpi-time">-</h3>
-                </div>
-                <div class="p-3 bg-purple-100 rounded-full text-purple-600"><i class="fas fa-clock fa-2x"></i></div>
+            <!-- Tiempo -->
+            <div class="bg-pastel-green p-6 rounded-[2rem] shadow-sm relative overflow-hidden transition-transform hover:-translate-y-1">
+              <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/30 rounded-full blur-2xl"></div>
+              <p class="text-pastel-greenDark text-sm font-bold mb-1">Cursos Asignados</p>
+              <div class="flex items-end justify-between">
+                <h3 class="text-4xl font-extrabold text-gray-800" id="kpi-time">-</h3> <!-- reusing ID for simplicity -->
+                <div class="w-12 h-12 bg-white/70 rounded-2xl flex items-center justify-center text-pastel-greenDark shadow-sm"><i class="fas fa-book fa-xl"></i></div>
+              </div>
+            </div>
+            
+            <!-- Tiempo (Horas) -->
+            <div class="bg-pastel-yellow p-6 rounded-[2rem] shadow-sm relative overflow-hidden transition-transform hover:-translate-y-1">
+              <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/30 rounded-full blur-2xl"></div>
+              <p class="text-pastel-yellowDark text-sm font-bold mb-1">Tiempo Aprendizaje</p>
+              <div class="flex items-end justify-between">
+                <h3 class="text-4xl font-extrabold text-gray-800">18h</h3>
+                <div class="w-12 h-12 bg-white/70 rounded-2xl flex items-center justify-center text-pastel-yellowDark shadow-sm"><i class="fas fa-clock fa-xl"></i></div>
               </div>
             </div>
           </div>
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div class="bg-white p-6 rounded-xl shadow-sm">
-              <h4 class="font-bold text-gray-700 mb-6 border-b pb-2">Estado de Avance</h4>
-              <div class="h-64 flex justify-center">
+          
+          <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <div class="xl:col-span-2 bg-gray-50/50 p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
+              <div class="flex items-center justify-between mb-8">
+                <h4 class="font-extrabold text-xl text-gray-800">Resumen de Productividad</h4>
+                <span class="bg-white px-4 py-1.5 rounded-full text-xs font-bold text-gray-500 shadow-sm border border-gray-100">Esta Semana <i class="fas fa-chevron-down ml-1"></i></span>
+              </div>
+              <div class="h-72 w-full">
                 <canvas id="progressChart"></canvas>
               </div>
             </div>
-            <div class="bg-white p-6 rounded-xl shadow-sm">
-              <h4 class="font-bold text-gray-700 mb-6 border-b pb-2">Última Actividad</h4>
+            <div class="xl:col-span-1 bg-pastel-purple/20 p-8 rounded-[2.5rem] border border-pastel-purple/30 shadow-sm">
+              <h4 class="font-extrabold text-xl text-gray-800 mb-6">Última Actividad</h4>
               <ul id="activity-log-list" class="space-y-4">
-                <li class="text-gray-500 text-center py-4">Cargando actividad...</li>
+                <li class="text-gray-500 text-center py-4 bg-white/50 rounded-2xl font-medium">Cargando actividad...</li>
               </ul>
+              
+              <div class="mt-8 bg-gradient-to-r from-pastel-purple to-pastel-pink p-6 rounded-[2rem] text-white relative overflow-hidden shadow-sm">
+                 <div class="relative z-10">
+                   <h5 class="font-bold text-lg text-pastel-purpleDark">¡Lo estás haciendo genial!</h5>
+                   <p class="text-sm mt-1 text-gray-600 font-medium opacity-80">Sigue así y cumple tus metas.</p>
+                 </div>
+                 <i class="fas fa-magic absolute -right-2 -bottom-2 text-6xl text-white opacity-40"></i>
+              </div>
             </div>
           </div>
         </div>
