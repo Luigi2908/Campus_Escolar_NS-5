@@ -197,17 +197,10 @@
       <!-- SIDEBAR -->
       <aside id="sidebar" class="w-64 bg-transparent text-gray-600 flex flex-col z-30 fixed lg:relative lg:translate-x-0 inset-y-0 left-0 transform transition-transform duration-300 -translate-x-full lg:mr-6">
         <div class="h-24 flex items-center justify-start px-6 pt-4">
-          <div class="bg-white p-2 rounded-xl shadow-sm mr-3 text-pastel-purpleDark">
-             <i class="fas fa-graduation-cap text-2xl"></i>
-          </div>
-          <span class="text-xl font-extrabold tracking-tight text-gray-800">LMS Corp</span>
-        </div>
-        
-        <div class="px-6 py-6 flex items-center space-x-4">
-          <img id="user-avatar" src="" class="h-14 w-14 rounded-2xl border-4 border-white shadow-soft object-cover bg-white">
-          <div class="overflow-hidden">
-            <p id="user-name" class="font-bold text-sm text-gray-800 truncate">Usuario</p>
-            <span id="user-role" class="text-[10px] bg-pastel-purple text-pastel-purpleDark font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">Rol</span>
+          <img src="https://i.pinimg.com/736x/7d/1d/89/7d1d89802c3c826c32b4b07e045a3453.jpg" alt="Logo" class="w-10 h-10 rounded-xl shadow-sm mr-3 object-cover">
+          <div class="flex flex-col">
+            <span class="text-xl font-extrabold tracking-tight text-gray-800 leading-tight">Somos NS-5</span>
+            <span class="text-xs text-gray-500 font-medium">Campus educativo</span>
           </div>
         </div>
 
@@ -264,11 +257,20 @@
               <p class="text-sm text-gray-400 mt-1 font-medium">Aquí está tu resumen de hoy.</p>
             </div>
           </div>
-          <div class="flex items-center gap-3">
-             <button onclick="refreshCurrentView()" class="bg-white hover:bg-gray-50 text-gray-500 hover:text-pastel-purpleDark transition-all px-3 py-2.5 rounded-full shadow-sm" title="Actualizar datos">
-               <i class="fas fa-sync-alt" id="refresh-icon"></i>
-             </button>
-             <div class="bg-white px-5 py-2.5 rounded-full text-sm font-bold text-gray-500 shadow-sm" id="current-date"></div>
+          <div class="flex flex-col items-end gap-2">
+            <div class="flex items-center gap-2">
+              <div class="text-right">
+                <p id="user-name" class="font-bold text-xs text-gray-800 leading-none">Usuario</p>
+                <span id="user-role" class="text-[9px] text-pastel-purpleDark font-bold uppercase tracking-wide">Rol</span>
+              </div>
+              <img id="user-avatar" src="" class="h-8 w-8 rounded-full border-2 border-white shadow-sm object-cover bg-white">
+            </div>
+            <div class="flex items-center gap-2">
+               <button onclick="refreshCurrentView()" class="bg-white hover:bg-gray-50 text-gray-500 hover:text-pastel-purpleDark transition-all p-1.5 rounded-full shadow-sm" title="Actualizar datos">
+                 <i class="fas fa-sync-alt text-xs" id="refresh-icon"></i>
+               </button>
+               <div class="bg-white px-3 py-1 rounded-full text-[10px] font-bold text-gray-500 shadow-sm" id="current-date"></div>
+            </div>
           </div>
         </header>
 
