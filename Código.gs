@@ -106,7 +106,17 @@ function loginUser(email, password) {
 function getCursos(userEmail) {
   try {
     const emailN = normalizeEmail_(userEmail);
-    const cursos = getDataAsJson(openSheet_('Cursos'));
+    let cursos = getDataAsJson(openSheet_('Cursos'));
+    
+    // Normalizar ID y filtrar inactivos
+    cursos = cursos.map(c => ({
+      ...c,
+      CursoID: c.CursoID || c.ID || c['#'] || Object.values(c)[0]
+    })).filter(c => {
+      const activo = String(c.Activo || 'Sí').trim().toLowerCase();
+      return activo !== 'no' && activo !== 'false' && activo !== '0' && activo !== 'inactivo';
+    });
+
     const progreso = getDataAsJson(openSheet_('Progreso')).filter(p => normalizeEmail_(p.Email) === emailN);
 
     return cursos.map(c => {

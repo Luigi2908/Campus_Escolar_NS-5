@@ -18,11 +18,25 @@
       ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
       ::-webkit-scrollbar-thumb:hover { background: #555; }
       .line-clamp-3{ display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+
+      /* Admin styles */
+      .admin-table th { position: sticky; top: 0; z-index: 1; }
+      .admin-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+      .toast-enter { animation: toastIn 0.4s ease-out; }
+      .toast-exit { animation: toastOut 0.3s ease-in forwards; }
+      @keyframes toastIn { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+      @keyframes toastOut { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(20px) scale(0.95); } }
+      .question-card { transition: all 0.2s ease; }
+      .question-card:hover { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(59,130,246,0.08); }
+      .pulse-dot { animation: pulseDot 2s infinite; }
+      @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
     </style>
   </head>
 
   <body class="bg-gray-100 font-sans text-gray-800 h-screen overflow-hidden">
-    <!-- 1. PANTALLA DE LOGIN -->
+    <!-- ============================================ -->
+    <!-- 1. PANTALLA DE LOGIN                         -->
+    <!-- ============================================ -->
     <div id="login-view" class="h-full flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
       <div class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md fade-in relative overflow-hidden">
         <div class="absolute top-0 left-0 w-full h-2 bg-blue-600"></div>
@@ -53,10 +67,13 @@
       </div>
     </div>
 
-    <!-- 2. PANTALLA PRINCIPAL (APP) -->
-    <div id="app-view" class="flex h-full hidden">
+    <!-- ============================================ -->
+    <!-- 2. PANTALLA PRINCIPAL (APP)                  -->
+    <!-- ============================================ -->
+    <div id="app-view" class="flex h-full hidden relative">
+      <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-20 hidden transition-opacity duration-300 opacity-0"></div>
       <!-- SIDEBAR -->
-      <aside class="w-64 bg-gray-900 text-white flex flex-col shadow-2xl z-10">
+      <aside id="sidebar" class="w-64 bg-gray-900 text-white flex flex-col shadow-2xl z-30 fixed inset-y-0 left-0 transform transition-transform duration-300 -translate-x-full">
         <div class="h-20 flex items-center justify-center border-b border-gray-800 bg-gray-900">
           <i class="fas fa-graduation-cap text-blue-500 text-2xl mr-2"></i>
           <span class="text-xl font-bold tracking-wider">LMS CORP</span>
@@ -68,16 +85,39 @@
             <span id="user-role" class="text-xs bg-blue-600 px-2 py-0.5 rounded-full text-white uppercase tracking-wide">Rol</span>
           </div>
         </div>
-        <nav class="flex-1 py-6 space-y-1">
-          <button id="nav-dashboard" type="button" onclick="navigate('dashboard'); return false;" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 border-l-4 border-transparent">
+        <nav class="flex-1 py-4 space-y-1 overflow-y-auto">
+          <!-- Navegación principal -->
+          <div class="px-6 py-2">
+            <p class="text-[10px] text-gray-500 font-semibold uppercase tracking-widest">Principal</p>
+          </div>
+          <button id="nav-dashboard" type="button" onclick="navigate('dashboard'); return false;" class="w-full flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 border-l-4 border-transparent">
             <i class="fas fa-chart-pie w-6"></i> <span class="font-medium">Dashboard</span>
           </button>
-          <button id="nav-courses" type="button" onclick="navigate('courses'); return false;" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 border-l-4 border-transparent">
+          <button id="nav-courses" type="button" onclick="navigate('courses'); return false;" class="w-full flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 border-l-4 border-transparent">
             <i class="fas fa-laptop-code w-6"></i> <span class="font-medium">Mis Cursos</span>
           </button>
-          <button id="nav-audit" type="button" onclick="navigate('audit'); return false;" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 border-l-4 border-transparent hidden">
+          <button id="nav-audit" type="button" onclick="navigate('audit'); return false;" class="w-full flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 border-l-4 border-transparent hidden">
             <i class="fas fa-shield-alt w-6"></i> <span class="font-medium">Auditoría</span>
           </button>
+
+          <!-- Navegación admin (oculta por defecto) -->
+          <div id="admin-nav-section" class="hidden">
+            <div class="px-6 pt-4 pb-2 border-t border-gray-800 mt-2">
+              <p class="text-[10px] text-gray-500 font-semibold uppercase tracking-widest">Administración</p>
+            </div>
+            <button id="nav-admin-dashboard" type="button" onclick="navigate('admin-dashboard'); return false;" class="w-full flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 border-l-4 border-transparent">
+              <i class="fas fa-tachometer-alt w-6"></i> <span class="font-medium">Panel Admin</span>
+            </button>
+            <button id="nav-admin-courses" type="button" onclick="navigate('admin-courses'); return false;" class="w-full flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 border-l-4 border-transparent">
+              <i class="fas fa-book w-6"></i> <span class="font-medium">Gestión Cursos</span>
+            </button>
+            <button id="nav-admin-users" type="button" onclick="navigate('admin-users'); return false;" class="w-full flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 border-l-4 border-transparent">
+              <i class="fas fa-users-cog w-6"></i> <span class="font-medium">Gestión Usuarios</span>
+            </button>
+            <button id="nav-admin-reports" type="button" onclick="navigate('admin-reports'); return false;" class="w-full flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 border-l-4 border-transparent">
+              <i class="fas fa-file-export w-6"></i> <span class="font-medium">Reportes</span>
+            </button>
+          </div>
         </nav>
         <div class="p-4 border-t border-gray-800">
           <button onclick="logout()" class="w-full flex items-center justify-center space-x-2 text-gray-400 hover:text-red-400 transition duration-200 py-2">
@@ -87,13 +127,18 @@
       </aside>
 
       <!-- MAIN CONTENT -->
-      <main class="flex-1 overflow-y-auto bg-gray-100 p-8 relative">
-        <header class="flex justify-between items-center mb-8">
-          <h2 id="page-title" class="text-3xl font-bold text-gray-800">Bienvenido</h2>
-          <div class="text-sm text-gray-500" id="current-date"></div>
+      <main class="flex-1 overflow-y-auto bg-gray-100 p-8 relative w-full transition-all duration-300">
+        <header class="flex flex-wrap justify-between items-center gap-4 mb-8">
+          <div class="flex items-center gap-4">
+            <button onclick="toggleSidebar()" class="text-gray-600 hover:text-blue-600 hover:bg-white transition-all p-2.5 rounded-xl shadow-sm border border-gray-200 bg-gray-50 flex items-center justify-center">
+              <i class="fas fa-bars fa-lg"></i>
+            </button>
+            <h2 id="page-title" class="text-3xl font-bold text-gray-800 tracking-tight">Bienvenido</h2>
+          </div>
+          <div class="text-sm font-medium text-gray-500 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100" id="current-date"></div>
         </header>
 
-        <!-- DASHBOARD -->
+        <!-- ═══════════════ DASHBOARD ═══════════════ -->
         <div id="view-dashboard" class="view-section fade-in hidden">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="bg-white p-6 rounded-xl shadow-sm border-b-4 border-blue-500">
@@ -142,7 +187,7 @@
           </div>
         </div>
 
-        <!-- CURSOS -->
+        <!-- ═══════════════ CURSOS ═══════════════ -->
         <div id="view-courses" class="view-section hidden fade-in">
           <div id="courses-loader" class="text-center py-10 hidden">
             <i class="fas fa-circle-notch fa-spin fa-3x text-blue-600"></i>
@@ -151,7 +196,7 @@
           <div id="courses-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
         </div>
 
-        <!-- AULA -->
+        <!-- ═══════════════ AULA ═══════════════ -->
         <div id="view-classroom" class="view-section hidden fade-in">
           <div class="mb-6 flex items-center justify-between">
             <div class="flex items-center space-x-3">
@@ -226,7 +271,7 @@
           </div>
         </div>
 
-        <!-- AUDITORIA -->
+        <!-- ═══════════════ AUDITORIA ═══════════════ -->
         <div id="view-audit" class="view-section hidden fade-in">
           <div class="bg-white rounded-xl shadow-sm overflow-hidden">
             <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
@@ -250,34 +295,398 @@
             </div>
           </div>
         </div>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- ═══════════════ ADMIN VIEWS ═══════════════ -->
+        <!-- ═══════════════════════════════════════════ -->
+
+        <!-- ═══════════════ ADMIN DASHBOARD ═══════════════ -->
+        <div id="view-admin-dashboard" class="view-section hidden fade-in">
+          <div id="admin-dash-loader" class="text-center py-16 hidden">
+            <i class="fas fa-circle-notch fa-spin fa-3x text-blue-600"></i>
+            <p class="mt-4 text-gray-500">Cargando estadísticas...</p>
+          </div>
+          <div id="admin-dash-content" class="hidden">
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 hover:shadow-md transition">
+                <div class="flex justify-between items-center">
+                  <div>
+                    <p class="text-gray-500 text-xs font-semibold uppercase">Total Usuarios</p>
+                    <h3 class="text-3xl font-bold text-gray-800 mt-1" id="akpi-users">0</h3>
+                  </div>
+                  <div class="p-3 bg-blue-100 rounded-xl text-blue-600"><i class="fas fa-users fa-lg"></i></div>
+                </div>
+              </div>
+              <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-indigo-500 hover:shadow-md transition">
+                <div class="flex justify-between items-center">
+                  <div>
+                    <p class="text-gray-500 text-xs font-semibold uppercase">Total Cursos</p>
+                    <h3 class="text-3xl font-bold text-gray-800 mt-1" id="akpi-courses">0</h3>
+                  </div>
+                  <div class="p-3 bg-indigo-100 rounded-xl text-indigo-600"><i class="fas fa-book-open fa-lg"></i></div>
+                </div>
+              </div>
+              <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500 hover:shadow-md transition">
+                <div class="flex justify-between items-center">
+                  <div>
+                    <p class="text-gray-500 text-xs font-semibold uppercase">Completados</p>
+                    <h3 class="text-3xl font-bold text-gray-800 mt-1" id="akpi-completed">0</h3>
+                  </div>
+                  <div class="p-3 bg-green-100 rounded-xl text-green-600"><i class="fas fa-trophy fa-lg"></i></div>
+                </div>
+              </div>
+              <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-amber-500 hover:shadow-md transition">
+                <div class="flex justify-between items-center">
+                  <div>
+                    <p class="text-gray-500 text-xs font-semibold uppercase">Promedio Global</p>
+                    <h3 class="text-3xl font-bold text-gray-800 mt-1" id="akpi-avg">0.0</h3>
+                  </div>
+                  <div class="p-3 bg-amber-100 rounded-xl text-amber-600"><i class="fas fa-chart-line fa-lg"></i></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Course Stats + Recent Activity -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div class="lg:col-span-2 bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="p-5 border-b bg-gray-50">
+                  <h4 class="font-bold text-gray-700 text-sm"><i class="fas fa-chart-bar mr-2 text-blue-600"></i>Rendimiento por Curso</h4>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left">
+                    <thead>
+                      <tr class="bg-gray-50 text-gray-500 text-xs uppercase">
+                        <th class="p-4 font-semibold">Curso</th>
+                        <th class="p-4 font-semibold text-center">Inscritos</th>
+                        <th class="p-4 font-semibold text-center">Completados</th>
+                        <th class="p-4 font-semibold text-center">Promedio</th>
+                      </tr>
+                    </thead>
+                    <tbody id="admin-course-stats-tbody" class="text-sm divide-y"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="p-5 border-b bg-gray-50">
+                  <h4 class="font-bold text-gray-700 text-sm"><i class="fas fa-history mr-2 text-green-600"></i>Actividad Reciente</h4>
+                </div>
+                <ul id="admin-activity-list" class="divide-y max-h-[400px] overflow-y-auto"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════ ADMIN: GESTIÓN CURSOS (LISTA) ═══════════════ -->
+        <div id="view-admin-courses" class="view-section hidden fade-in">
+          <!-- Header -->
+          <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+            <div class="flex items-center gap-3">
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-search"></i></span>
+                <input type="text" id="admin-courses-search" onkeyup="filterAdminCourses()" placeholder="Buscar curso..." class="pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none w-64 bg-white">
+              </div>
+              <select id="admin-courses-filter-unidad" onchange="filterAdminCourses()" class="border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                <option value="">Todas las unidades</option>
+              </select>
+            </div>
+            <button onclick="openCourseEditor(null)" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-lg hover:shadow-xl flex items-center gap-2">
+              <i class="fas fa-plus"></i> Nuevo Curso
+            </button>
+          </div>
+          <!-- Loading -->
+          <div id="admin-courses-loader" class="text-center py-16 hidden">
+            <i class="fas fa-circle-notch fa-spin fa-3x text-blue-600"></i>
+          </div>
+          <!-- Table -->
+          <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left">
+                <thead>
+                  <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+                    <th class="p-4 font-semibold">ID</th>
+                    <th class="p-4 font-semibold">Título</th>
+                    <th class="p-4 font-semibold">Tipo</th>
+                    <th class="p-4 font-semibold">Unidad</th>
+                    <th class="p-4 font-semibold text-center">Preguntas</th>
+                    <th class="p-4 font-semibold text-center">Estado</th>
+                    <th class="p-4 font-semibold text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-courses-tbody" class="text-sm divide-y divide-gray-100">
+                  <tr><td colspan="6" class="p-8 text-center text-gray-400">Cargando cursos...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════ ADMIN: EDITOR DE CURSO ═══════════════ -->
+        <div id="view-admin-course-editor" class="view-section hidden fade-in">
+          <!-- Header -->
+          <div class="flex justify-between items-center mb-6">
+            <button onclick="navigate('admin-courses')" class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition font-medium">
+              <i class="fas fa-arrow-left"></i> Volver a Gestión de Cursos
+            </button>
+            <div class="flex items-center gap-3">
+              <button onclick="previewEditorCourse()" class="px-4 py-2.5 border border-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 transition flex items-center gap-2">
+                <i class="fas fa-eye"></i> Vista Previa
+              </button>
+              <button onclick="saveCourseEditor()" id="btn-save-course" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition shadow-lg flex items-center gap-2">
+                <i class="fas fa-save"></i> Guardar Curso
+              </button>
+            </div>
+          </div>
+
+          <!-- Información del Curso -->
+          <div class="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100">
+            <h4 class="font-bold text-gray-700 mb-5 flex items-center gap-2">
+              <span class="bg-blue-100 text-blue-600 p-2 rounded-lg"><i class="fas fa-info-circle"></i></span>
+              Información del Curso
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div class="md:col-span-2">
+                <label class="block text-xs text-gray-500 font-semibold mb-1 uppercase">Título del Curso *</label>
+                <div class="flex items-center gap-4">
+                  <input type="text" id="editor-titulo" class="flex-1 border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Ej: Introducción a la Seguridad Industrial">
+                  <label class="flex items-center gap-2 cursor-pointer bg-gray-50 border border-gray-300 px-4 py-3 rounded-lg hover:bg-gray-100 transition whitespace-nowrap">
+                    <input type="checkbox" id="editor-activo" checked class="w-4 h-4 text-blue-600 rounded cursor-pointer">
+                    <span class="text-sm font-semibold text-gray-700">Curso Activo</span>
+                  </label>
+                </div>
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-xs text-gray-500 font-semibold mb-1 uppercase">Descripción</label>
+                <textarea id="editor-descripcion" rows="3" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none" placeholder="Describe el contenido y objetivos del curso..."></textarea>
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 font-semibold mb-1 uppercase">Tipo de Contenido</label>
+                <select id="editor-tipo" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                  <option value="video">Video</option>
+                  <option value="pdf">PDF / Documento</option>
+                  <option value="presentacion">Presentación</option>
+                  <option value="enlace">Enlace externo</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 font-semibold mb-1 uppercase">Unidad / Módulo</label>
+                <input type="text" id="editor-unidad" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ej: Unidad 1">
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-xs text-gray-500 font-semibold mb-1 uppercase">Enlace del Contenido (URL)</label>
+                <input type="url" id="editor-enlace" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="https://...">
+              </div>
+            </div>
+          </div>
+
+          <!-- Configuración del Quiz -->
+          <div class="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100">
+            <h4 class="font-bold text-gray-700 mb-5 flex items-center gap-2">
+              <span class="bg-green-100 text-green-600 p-2 rounded-lg"><i class="fas fa-cog"></i></span>
+              Configuración del Quiz
+            </h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              <div>
+                <label class="block text-xs text-gray-500 font-semibold mb-1 uppercase">Puntaje Mínimo (%)</label>
+                <input type="number" id="editor-puntaje-min" value="70" min="0" max="100" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 font-semibold mb-1 uppercase">Intentos Máximos</label>
+                <input type="number" id="editor-intentos-max" value="3" min="1" max="99" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 font-semibold mb-1 uppercase">Tiempo Límite (min)</label>
+                <input type="number" id="editor-tiempo" value="30" min="1" max="999" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 font-semibold mb-1 uppercase">Preguntas Aleatorias</label>
+                <label class="flex items-center gap-3 mt-2 cursor-pointer">
+                  <input type="checkbox" id="editor-aleatorio" class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                  <span class="text-sm text-gray-700">Activar orden aleatorio</span>
+                </label>
+              </div>
+            </div>
+            <div class="mt-4">
+              <label class="block text-xs text-gray-500 font-semibold mb-1 uppercase">Total Preguntas a Mostrar <span class="text-gray-400">(0 = todas)</span></label>
+              <input type="number" id="editor-total-preguntas" value="0" min="0" class="w-32 border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+          </div>
+
+          <!-- Preguntas del Quiz -->
+          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div class="flex justify-between items-center mb-5">
+              <h4 class="font-bold text-gray-700 flex items-center gap-2">
+                <span class="bg-purple-100 text-purple-600 p-2 rounded-lg"><i class="fas fa-question-circle"></i></span>
+                Preguntas del Quiz
+                <span id="editor-questions-count" class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full">0</span>
+              </h4>
+              <button onclick="addEditorQuestion()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2">
+                <i class="fas fa-plus"></i> Agregar Pregunta
+              </button>
+            </div>
+            <div id="editor-questions-container">
+              <p class="text-gray-400 text-center py-8 italic">No hay preguntas configuradas. Haz clic en "Agregar Pregunta" para comenzar.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════ ADMIN: GESTIÓN USUARIOS ═══════════════ -->
+        <div id="view-admin-users" class="view-section hidden fade-in">
+          <!-- Header -->
+          <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-search"></i></span>
+              <input type="text" id="admin-users-search" onkeyup="filterAdminUsers()" placeholder="Buscar usuario..." class="pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none w-64 bg-white">
+            </div>
+            <button onclick="openUserModal(null)" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-lg flex items-center gap-2">
+              <i class="fas fa-user-plus"></i> Nuevo Usuario
+            </button>
+          </div>
+          <!-- Loading -->
+          <div id="admin-users-loader" class="text-center py-16 hidden">
+            <i class="fas fa-circle-notch fa-spin fa-3x text-blue-600"></i>
+          </div>
+          <!-- Table -->
+          <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left">
+                <thead>
+                  <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+                    <th class="p-4 font-semibold">ID</th>
+                    <th class="p-4 font-semibold">Email</th>
+                    <th class="p-4 font-semibold">Nombre Completo</th>
+                    <th class="p-4 font-semibold">Rol</th>
+                    <th class="p-4 font-semibold text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-users-tbody" class="text-sm divide-y divide-gray-100">
+                  <tr><td colspan="5" class="p-8 text-center text-gray-400">Cargando usuarios...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════ ADMIN: REPORTES ═══════════════ -->
+        <div id="view-admin-reports" class="view-section hidden fade-in">
+          <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+            <div class="flex items-center gap-3">
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-search"></i></span>
+                <input type="text" id="admin-reports-search" onkeyup="filterAdminReports()" placeholder="Buscar..." class="pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none w-64 bg-white">
+              </div>
+            </div>
+            <button onclick="exportReportCSV()" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-lg flex items-center gap-2">
+              <i class="fas fa-file-csv"></i> Exportar CSV
+            </button>
+          </div>
+          <div id="admin-reports-loader" class="text-center py-16 hidden">
+            <i class="fas fa-circle-notch fa-spin fa-3x text-blue-600"></i>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left">
+                <thead>
+                  <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+                    <th class="p-4 font-semibold">Usuario</th>
+                    <th class="p-4 font-semibold">Email</th>
+                    <th class="p-4 font-semibold">Curso</th>
+                    <th class="p-4 font-semibold text-center">Estado</th>
+                    <th class="p-4 font-semibold text-center">Nota</th>
+                    <th class="p-4 font-semibold text-center">Intentos</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-reports-tbody" class="text-sm divide-y divide-gray-100">
+                  <tr><td colspan="6" class="p-8 text-center text-gray-400">Cargando reporte...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
       </main>
     </div>
 
-    <!-- MODAL -->
+    <!-- ═══════════════ QUIZ MODAL ═══════════════ -->
     <div id="modal" class="fixed inset-0 bg-black bg-opacity-70 hidden flex items-center justify-center z-50 backdrop-blur-sm p-4">
       <div class="bg-white rounded-xl w-full max-w-4xl h-[85vh] flex flex-col shadow-2xl overflow-hidden relative">
         <div class="flex justify-between items-center p-4 bg-gray-900 text-white">
           <h3 id="modal-title" class="font-bold text-lg tracking-wide">Contenido</h3>
-          <button onclick="closeModal()" class="text-gray-300 hover:text-white transition"><i class="fas fa-times fa-lg"></i></button>
+          <div class="flex items-center gap-4">
+            <span id="quiz-timer" class="font-mono text-lg font-bold hidden"></span>
+            <button onclick="closeModal()" class="text-gray-300 hover:text-white transition"><i class="fas fa-times fa-lg"></i></button>
+          </div>
         </div>
         <div id="modal-body" class="flex-1 overflow-y-auto bg-gray-100 flex flex-col items-center"></div>
       </div>
     </div>
 
+    <!-- ═══════════════ ADMIN MODAL (Usuarios) ═══════════════ -->
+    <div id="admin-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden flex items-center justify-center z-50 backdrop-blur-sm p-4">
+      <div class="bg-white rounded-xl w-full max-w-lg shadow-2xl overflow-hidden">
+        <div class="flex justify-between items-center p-4 bg-gradient-to-r from-gray-900 to-blue-900 text-white">
+          <h3 id="admin-modal-title" class="font-bold text-lg">Formulario</h3>
+          <button onclick="closeAdminModal()" class="text-gray-300 hover:text-white transition"><i class="fas fa-times fa-lg"></i></button>
+        </div>
+        <div id="admin-modal-body" class="p-6"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ CONFIRM DIALOG ═══════════════ -->
+    <div id="confirm-dialog" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-[60] backdrop-blur-sm">
+      <div class="bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl fade-in">
+        <div class="text-center mb-5">
+          <div class="mx-auto w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-3">
+            <i class="fas fa-exclamation-triangle text-2xl text-red-500"></i>
+          </div>
+          <p id="confirm-msg" class="text-gray-800 font-medium">¿Está seguro?</p>
+        </div>
+        <div class="flex justify-center gap-3">
+          <button onclick="closeConfirm()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 transition">Cancelar</button>
+          <button id="confirm-btn" class="px-5 py-2.5 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 transition">Confirmar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ TOAST ═══════════════ -->
+    <div id="toast" class="fixed bottom-6 right-6 z-[70] hidden">
+      <div id="toast-inner" class="px-5 py-3 rounded-xl shadow-2xl text-white font-medium flex items-center gap-3 text-sm">
+        <i id="toast-icon" class="fas fa-check-circle text-lg"></i>
+        <span id="toast-msg">Operación exitosa</span>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- ═══════════════ JAVASCRIPT ═══════════════ -->
+    <!-- ═══════════════════════════════════════════ -->
     <script>
+      // ── Global State ──
       let currentUser = null;
       let chartInstance = null;
       let coursesCache = [];
       let currentCourseId = null;
 
+      // Admin state
+      let adminCoursesCache = [];
+      let adminUsersCache = [];
+      let editingCourseId = null;
+      let editorQuestions = [];
+      let confirmCallback = null;
+      let quizTimerId = null;
+      let currentQuizData = null;
+      let reporteCache = [];
+
+      // Date header
       document.getElementById('current-date').textContent =
         new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
+      // ══════════════════════════════════════
+      // LOGIN
+      // ══════════════════════════════════════
       function handleLogin(e) {
         e.preventDefault();
         const btn = document.getElementById('btn-login');
         const error = document.getElementById('login-error');
-
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
         btn.disabled = true;
         error.classList.add('hidden');
@@ -285,7 +694,6 @@
         const email = document.getElementById('email').value;
         const pass = document.getElementById('password').value;
 
-        // SE AGREGA withFailureHandler PARA EVITAR QUE SE QUEDE CARGANDO
         google.script.run
           .withSuccessHandler(res => {
             if (res.status === 'success') {
@@ -299,15 +707,17 @@
             }
           })
           .withFailureHandler(err => {
-             // Si el servidor falla crashea, mostrará esto en pantalla
-             error.textContent = 'Error de conexión: ' + (err.message || err);
-             error.classList.remove('hidden');
-             btn.innerHTML = 'INGRESAR AL SISTEMA';
-             btn.disabled = false;
+            error.textContent = 'Error de conexión: ' + (err.message || err);
+            error.classList.remove('hidden');
+            btn.innerHTML = 'INGRESAR AL SISTEMA';
+            btn.disabled = false;
           })
           .loginUser(email, pass);
       }
 
+      // ══════════════════════════════════════
+      // INIT APP
+      // ══════════════════════════════════════
       function initApp() {
         document.getElementById('login-view').classList.add('hidden');
         document.getElementById('app-view').classList.remove('hidden');
@@ -320,37 +730,81 @@
         if (['administrador', 'gerente', 'supervisor'].includes(role)) {
           document.getElementById('nav-audit').classList.remove('hidden');
         }
+        if (role === 'administrador') {
+          document.getElementById('admin-nav-section').classList.remove('hidden');
+          // Inicializar hojas admin si es la primera vez
+          google.script.run.withSuccessHandler(() => {}).withFailureHandler(() => {}).initAdminSheets();
+        }
 
         navigate('dashboard');
       }
 
       function logout() { location.reload(); }
 
+      function isAdmin() {
+        return (currentUser?.role || '').toLowerCase().trim() === 'administrador';
+      }
+
+      // ══════════════════════════════════════
+      // NAVIGATION
+      // ══════════════════════════════════════
       function navigate(viewName) {
         const role = (currentUser?.role || '').toLowerCase().trim();
+
+        // Security checks
         if (viewName === 'audit' && !['administrador','gerente','supervisor'].includes(role)) {
           viewName = 'dashboard';
         }
+        if (viewName.startsWith('admin-') && role !== 'administrador') {
+          viewName = 'dashboard';
+        }
 
-        const navKey = (viewName === 'classroom') ? 'courses' : viewName;
+        // Nav key for highlighting (editor highlights its parent)
+        const navKey = (viewName === 'classroom') ? 'courses'
+          : (viewName === 'admin-course-editor') ? 'admin-courses'
+          : viewName;
 
-        document.querySelectorAll('nav [id^="nav-"]').forEach(el => el.classList.remove('nav-active'));
+        // Reset all nav + views
+        document.querySelectorAll('nav [id^="nav-"]').forEach(el => {
+          if (el.id !== 'admin-nav-section') el.classList.remove('nav-active');
+        });
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
 
+        // Activate nav button
         const navEl = document.getElementById('nav-' + navKey);
         if (navEl) navEl.classList.add('nav-active');
 
+        // Show view
         const viewEl = document.getElementById('view-' + viewName);
         if (viewEl) viewEl.classList.remove('hidden');
 
-        const titles = { dashboard: 'Panel de Control', courses: 'Catálogo de Cursos', classroom: 'Aula Virtual', audit: 'Auditoría del Sistema' };
+        // Page title
+        const titles = {
+          dashboard: 'Panel de Control',
+          courses: 'Catálogo de Cursos',
+          classroom: 'Aula Virtual',
+          audit: 'Auditoría del Sistema',
+          'admin-dashboard': 'Panel de Administración',
+          'admin-courses': 'Gestión de Cursos',
+          'admin-course-editor': 'Editor de Curso',
+          'admin-users': 'Gestión de Usuarios',
+          'admin-reports': 'Reportes de Progreso'
+        };
         document.getElementById('page-title').textContent = titles[viewName] || 'Campus Virtual';
 
+        // Load data for the view
         if (viewName === 'dashboard') loadDashboardData();
         if (viewName === 'courses') loadCoursesData();
         if (viewName === 'audit') loadAuditData();
+        if (viewName === 'admin-dashboard') loadAdminDashboard();
+        if (viewName === 'admin-courses') loadAdminCourses();
+        if (viewName === 'admin-users') loadAdminUsers();
+        if (viewName === 'admin-reports') loadAdminReports();
       }
 
+      // ══════════════════════════════════════
+      // STUDENT: DASHBOARD
+      // ══════════════════════════════════════
       function loadDashboardData() {
         google.script.run.withSuccessHandler(metrics => {
           const completed = Number(metrics.completedCourses) || 0;
@@ -387,6 +841,9 @@
         }).getDashboardMetrics(currentUser.email, currentUser.role);
       }
 
+      // ══════════════════════════════════════
+      // STUDENT: COURSES
+      // ══════════════════════════════════════
       function loadCoursesData() {
         const grid = document.getElementById('courses-grid');
         const loader = document.getElementById('courses-loader');
@@ -427,6 +884,9 @@
         }).getCursos(currentUser.email);
       }
 
+      // ══════════════════════════════════════
+      // STUDENT: AUDIT
+      // ══════════════════════════════════════
       function loadAuditData() {
         const tbody = document.getElementById('audit-table-body');
         tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center"><i class="fas fa-spinner fa-spin fa-2x text-blue-500"></i></td></tr>';
@@ -442,6 +902,7 @@
             let actionColor = 'text-gray-700';
             if ((log.Accion || '').includes('Login')) actionColor = 'text-blue-600 font-semibold';
             if ((log.Accion || '').includes('Quiz')) actionColor = 'text-green-600 font-semibold';
+            if ((log.Accion || '').includes('Admin')) actionColor = 'text-purple-600 font-semibold';
 
             const row = `<tr class="hover:bg-gray-50 transition">
                 <td class="p-4 border-b text-gray-600">${fechaStr}</td>
@@ -454,6 +915,9 @@
         }).getAuditData(currentUser.email, currentUser.role);
       }
 
+      // ══════════════════════════════════════
+      // STUDENT: CLASSROOM
+      // ══════════════════════════════════════
       function openCourse(cursoId) {
         const id = String(cursoId);
         currentCourseId = id;
@@ -515,65 +979,936 @@
         });
       }
 
+      // ══════════════════════════════════════
+      // DYNAMIC QUIZ
+      // ══════════════════════════════════════
       function startQuiz(cursoId) {
         const body = document.getElementById('modal-body');
-        body.innerHTML = `
-          <div class="max-w-2xl w-full bg-white p-8 rounded-lg shadow-sm my-auto">
-            <div class="flex items-center space-x-3 mb-6">
-              <span class="bg-blue-100 text-blue-600 p-2 rounded-lg"><i class="fas fa-question-circle fa-lg"></i></span>
-              <h3 class="font-bold text-2xl text-gray-800">Evaluación Final</h3>
-            </div>
-            <div class="space-y-6">
-              <div>
-                <p class="font-semibold text-gray-700 mb-2">1. Según el material visto, ¿cuál es el paso más importante?</p>
-                <select id="q1" class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                  <option value="0">Seleccione una respuesta...</option>
-                  <option value="1">Planificación y Análisis</option>
-                  <option value="0">Ignorar los protocolos</option>
-                </select>
-              </div>
-              <div>
-                <p class="font-semibold text-gray-700 mb-2">2. ¿Qué herramienta se recomienda utilizar?</p>
-                <select id="q2" class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                  <option value="0">Seleccione una respuesta...</option>
-                  <option value="0">Lápiz y papel</option>
-                  <option value="1">Software de Gestión en la Nube</option>
-                </select>
-              </div>
-            </div>
-            <button onclick="submitQuiz(${JSON.stringify(cursoId)})" class="mt-8 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition shadow-md">
-              Enviar Respuestas
-            </button>
-          </div>
-        `;
+        const timerEl = document.getElementById('quiz-timer');
+        timerEl.classList.add('hidden');
+        if (quizTimerId) { clearInterval(quizTimerId); quizTimerId = null; }
+
+        body.innerHTML = `<div class="flex flex-col items-center justify-center h-full"><i class="fas fa-circle-notch fa-spin fa-3x text-blue-600"></i><p class="mt-4 text-gray-500">Cargando evaluación...</p></div>`;
+
+        google.script.run
+          .withSuccessHandler(data => {
+            currentQuizData = data;
+            const questions = data.questions || [];
+            const config = data.config;
+
+            if (questions.length === 0) {
+              body.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full text-center p-8">
+                  <i class="fas fa-info-circle fa-4x text-gray-300 mb-4"></i>
+                  <h3 class="text-xl font-bold text-gray-700 mb-2">Sin evaluación</h3>
+                  <p class="text-gray-500 mb-6">Este curso no tiene preguntas de evaluación configuradas.</p>
+                  <button onclick="closeModal()" class="bg-gray-800 text-white px-6 py-2 rounded-lg hover:bg-gray-900 transition">Cerrar</button>
+                </div>`;
+              return;
+            }
+
+            // Build quiz HTML
+            let html = `<div class="max-w-2xl w-full bg-white p-8 rounded-lg shadow-sm my-6 mx-4">
+              <div class="flex items-center space-x-3 mb-6">
+                <span class="bg-blue-100 text-blue-600 p-2 rounded-lg"><i class="fas fa-question-circle fa-lg"></i></span>
+                <div>
+                  <h3 class="font-bold text-2xl text-gray-800">Evaluación</h3>
+                  <p class="text-sm text-gray-500">${questions.length} pregunta${questions.length > 1 ? 's' : ''}</p>
+                </div>
+              </div>`;
+
+            if (config) {
+              html += `<div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6 text-sm text-blue-700 flex items-center gap-3">
+                <i class="fas fa-info-circle"></i>
+                <span>Puntaje mínimo: <strong>${config.PuntajeMinimo || 70}%</strong>
+                ${config.TiempoLimiteMin ? ' · Tiempo: <strong>' + config.TiempoLimiteMin + ' min</strong>' : ''}</span>
+              </div>`;
+            }
+
+            html += '<div class="space-y-6">';
+            questions.forEach((q, i) => {
+              html += `<div class="border border-gray-200 rounded-xl p-5">
+                <p class="font-semibold text-gray-700 mb-3">${i + 1}. ${escapeHtml(q.Texto || '')}</p>
+                <div class="space-y-2">`;
+
+              const options = [
+                { key: 'A', text: q.OpcionA },
+                { key: 'B', text: q.OpcionB },
+                { key: 'C', text: q.OpcionC },
+                { key: 'D', text: q.OpcionD }
+              ].filter(o => o.text && String(o.text).trim());
+
+              options.forEach(opt => {
+                html += `<label class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition">
+                  <input type="radio" name="quiz-q${i}" value="${opt.key}" class="w-4 h-4 text-blue-600">
+                  <span class="text-sm text-gray-700"><strong class="text-gray-500">${opt.key})</strong> ${escapeHtml(opt.text)}</span>
+                </label>`;
+              });
+
+              html += '</div></div>';
+            });
+            html += '</div>';
+
+            html += `<button onclick="submitDynamicQuiz('${escapeAttr(cursoId)}')" class="mt-8 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition shadow-md text-lg">
+                <i class="fas fa-paper-plane mr-2"></i> Enviar Respuestas
+              </button>
+            </div>`;
+
+            body.innerHTML = html;
+
+            // Start timer if configured
+            if (config && config.TiempoLimiteMin && Number(config.TiempoLimiteMin) > 0) {
+              startQuizTimer(Number(config.TiempoLimiteMin), cursoId);
+            }
+          })
+          .withFailureHandler(err => {
+            body.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-center p-8">
+              <i class="fas fa-exclamation-triangle fa-4x text-red-400 mb-4"></i>
+              <p class="text-gray-700">Error al cargar la evaluación</p>
+              <p class="text-sm text-gray-500 mt-2">${err.message || err}</p>
+              <button onclick="closeModal()" class="mt-4 bg-gray-800 text-white px-6 py-2 rounded-lg">Cerrar</button>
+            </div>`;
+          })
+          .getQuizQuestions(cursoId);
       }
 
-      function submitQuiz(cursoId) {
-        const q1 = document.getElementById('q1').value;
-        const q2 = document.getElementById('q2').value;
-        let score = 0;
-        if (q1 === '1') score += 50;
-        if (q2 === '1') score += 50;
+      function submitDynamicQuiz(cursoId) {
+        if (!currentQuizData) return;
+        if (quizTimerId) { clearInterval(quizTimerId); quizTimerId = null; }
+        document.getElementById('quiz-timer').classList.add('hidden');
 
-        const passed = score >= 70;
+        const questions = currentQuizData.questions || [];
+        const config = currentQuizData.config;
+        const minScore = config ? (Number(config.PuntajeMinimo) || 70) : 70;
+
+        let totalPoints = 0;
+        let earnedPoints = 0;
+
+        questions.forEach((q, i) => {
+          const pts = Number(q.Puntos) || 10;
+          totalPoints += pts;
+          const selected = document.querySelector(`input[name="quiz-q${i}"]:checked`);
+          if (selected && selected.value === String(q.RespuestaCorrecta || '').trim().toUpperCase()) {
+            earnedPoints += pts;
+          }
+        });
+
+        const score = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
+        const passed = score >= minScore;
         const color = passed ? 'text-green-600' : 'text-red-600';
         const icon = passed ? 'fa-trophy' : 'fa-times-circle';
+        const bgGradient = passed ? 'from-green-50 to-emerald-50' : 'from-red-50 to-orange-50';
 
         const body = document.getElementById('modal-body');
         body.innerHTML = `
-          <div class="flex flex-col items-center justify-center h-full text-center p-8">
+          <div class="flex flex-col items-center justify-center h-full text-center p-8 bg-gradient-to-b ${bgGradient}">
             <i class="fas ${icon} fa-5x ${color} mb-4 animate-bounce"></i>
-            <h2 class="text-3xl font-bold text-gray-800 mb-2">Tu Calificación: ${score}/100</h2>
-            <p class="text-lg text-gray-600 mb-6">${passed ? '¡Felicidades! Has aprobado la unidad.' : 'No has alcanzado el puntaje mínimo. Inténtalo de nuevo.'}</p>
-            <button onclick="closeModal(); navigate('dashboard');" class="bg-gray-800 text-white px-6 py-2 rounded hover:bg-gray-900 transition">
+            <h2 class="text-4xl font-bold text-gray-800 mb-2">${score}/100</h2>
+            <p class="text-lg text-gray-600 mb-2">${passed ? '¡Felicidades! Has aprobado la evaluación.' : 'No alcanzaste el puntaje mínimo (' + minScore + '%).'}</p>
+            <p class="text-sm text-gray-500 mb-6">Respuestas correctas: ${earnedPoints} de ${totalPoints} puntos</p>
+            <button onclick="closeModal(); navigate('dashboard');" class="bg-gray-800 text-white px-8 py-3 rounded-xl hover:bg-gray-900 transition font-bold shadow-lg">
               Volver al Panel
             </button>
-          </div>
-        `;
+          </div>`;
+
         google.script.run.saveQuizResult(currentUser.email, cursoId, score, passed);
       }
 
-      function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+      function startQuizTimer(minutes, cursoId) {
+        let remaining = minutes * 60;
+        const timerEl = document.getElementById('quiz-timer');
+        timerEl.classList.remove('hidden');
+
+        function updateDisplay() {
+          const m = Math.floor(remaining / 60);
+          const s = remaining % 60;
+          timerEl.textContent = `⏱ ${m}:${s.toString().padStart(2, '0')}`;
+          timerEl.className = 'font-mono text-lg font-bold ' + (remaining <= 60 ? 'text-red-400 pulse-dot' : 'text-white');
+        }
+        updateDisplay();
+
+        quizTimerId = setInterval(() => {
+          remaining--;
+          updateDisplay();
+          if (remaining <= 0) {
+            clearInterval(quizTimerId);
+            quizTimerId = null;
+            submitDynamicQuiz(cursoId);
+          }
+        }, 1000);
+      }
+
+      // ══════════════════════════════════════
+      // ADMIN: DASHBOARD
+      // ══════════════════════════════════════
+      function loadAdminDashboard() {
+        const loader = document.getElementById('admin-dash-loader');
+        const content = document.getElementById('admin-dash-content');
+        loader.classList.remove('hidden');
+        content.classList.add('hidden');
+
+        google.script.run
+          .withSuccessHandler(data => {
+            loader.classList.add('hidden');
+            content.classList.remove('hidden');
+
+            document.getElementById('akpi-users').textContent = data.totalUsuarios || 0;
+            document.getElementById('akpi-courses').textContent = data.totalCursos || 0;
+            document.getElementById('akpi-completed').textContent = data.totalCompletados || 0;
+            document.getElementById('akpi-avg').textContent = data.avgScore || '0.0';
+
+            // Course stats table
+            const tbody = document.getElementById('admin-course-stats-tbody');
+            tbody.innerHTML = '';
+            (data.cursosStats || []).forEach(cs => {
+              const pct = cs.totalInscritos > 0 ? Math.round((cs.completados / cs.totalInscritos) * 100) : 0;
+              tbody.insertAdjacentHTML('beforeend', `
+                <tr class="hover:bg-gray-50 transition">
+                  <td class="p-4 font-medium text-gray-800">${cs.titulo || ''}</td>
+                  <td class="p-4 text-center"><span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-bold">${cs.totalInscritos}</span></td>
+                  <td class="p-4 text-center"><span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">${cs.completados}</span> <span class="text-gray-400 text-xs">(${pct}%)</span></td>
+                  <td class="p-4 text-center font-bold text-gray-700">${cs.promedioNota}</td>
+                </tr>`);
+            });
+            if (!data.cursosStats || data.cursosStats.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-gray-400">No hay datos de cursos</td></tr>';
+            }
+
+            // Recent activity
+            const actList = document.getElementById('admin-activity-list');
+            actList.innerHTML = '';
+            (data.recentActivity || []).forEach(a => {
+              const fecha = a.FechaHora ? new Date(a.FechaHora).toLocaleString('es-CO', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+              let iconClass = 'fa-circle text-gray-300';
+              const accion = (a.Accion || '').toLowerCase();
+              if (accion.includes('login')) iconClass = 'fa-sign-in-alt text-blue-500';
+              else if (accion.includes('quiz')) iconClass = 'fa-check-circle text-green-500';
+              else if (accion.includes('admin')) iconClass = 'fa-cog text-purple-500';
+
+              actList.insertAdjacentHTML('beforeend', `
+                <li class="px-5 py-3 flex items-start gap-3 hover:bg-gray-50 transition text-sm">
+                  <i class="fas ${iconClass} mt-0.5"></i>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-gray-700 truncate">${a.Accion || ''}</p>
+                    <p class="text-xs text-gray-400">${a.Email || ''} · ${fecha}</p>
+                  </div>
+                </li>`);
+            });
+            if (!data.recentActivity || data.recentActivity.length === 0) {
+              actList.innerHTML = '<li class="p-5 text-center text-gray-400 text-sm">Sin actividad reciente</li>';
+            }
+          })
+          .withFailureHandler(err => {
+            loader.classList.add('hidden');
+            content.classList.remove('hidden');
+            content.innerHTML = `<div class="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700"><i class="fas fa-exclamation-triangle mr-2"></i>Error: ${err.message || err}</div>`;
+          })
+          .getAdminDashboardData(currentUser.email);
+      }
+
+      // ══════════════════════════════════════
+      // ADMIN: GESTIÓN DE CURSOS
+      // ══════════════════════════════════════
+      function loadAdminCourses() {
+        const tbody = document.getElementById('admin-courses-tbody');
+        const loader = document.getElementById('admin-courses-loader');
+        loader.classList.remove('hidden');
+        tbody.innerHTML = '';
+
+        google.script.run
+          .withSuccessHandler(cursos => {
+            loader.classList.add('hidden');
+            adminCoursesCache = Array.isArray(cursos) ? cursos : [];
+
+            // Populate unit filter dropdown
+            const unidades = [...new Set(adminCoursesCache.map(c => c.Unidad || '').filter(Boolean))];
+            const filterEl = document.getElementById('admin-courses-filter-unidad');
+            filterEl.innerHTML = '<option value="">Todas las unidades</option>';
+            unidades.forEach(u => {
+              filterEl.insertAdjacentHTML('beforeend', `<option value="${escapeAttr(u)}">${escapeHtml(u)}</option>`);
+            });
+
+            renderAdminCoursesTable();
+          })
+          .withFailureHandler(err => {
+            loader.classList.add('hidden');
+            tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-red-500">Error: ${err.message || err}</td></tr>`;
+          })
+          .getCursosAdmin(currentUser.email);
+      }
+
+      function renderAdminCoursesTable() {
+        const tbody = document.getElementById('admin-courses-tbody');
+        tbody.innerHTML = '';
+
+        if (adminCoursesCache.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-gray-400"><i class="fas fa-book-open text-3xl mb-2"></i><br>No hay cursos registrados</td></tr>';
+          return;
+        }
+
+        adminCoursesCache.forEach(c => {
+          const typeColors = {
+            video: 'bg-indigo-100 text-indigo-700',
+            pdf: 'bg-red-100 text-red-700',
+            presentacion: 'bg-amber-100 text-amber-700',
+            enlace: 'bg-teal-100 text-teal-700'
+          };
+          const typeColor = typeColors[(c.Tipo || '').toLowerCase()] || 'bg-gray-100 text-gray-700';
+
+          tbody.insertAdjacentHTML('beforeend', `
+            <tr class="hover:bg-blue-50/50 transition" data-unidad="${escapeAttr(c.Unidad || '')}">
+              <td class="p-4 text-gray-500 font-mono text-xs">${c.CursoID}</td>
+              <td class="p-4 font-medium text-gray-800">${escapeHtml(c.Titulo || '')}</td>
+              <td class="p-4"><span class="admin-badge ${typeColor}">${escapeHtml((c.Tipo || 'N/A').toUpperCase())}</span></td>
+              <td class="p-4 text-gray-600">${escapeHtml(c.Unidad || '-')}</td>
+              <td class="p-4 text-center"><span class="bg-purple-100 text-purple-700 px-2.5 py-1 rounded-full text-xs font-bold">${c.numPreguntas || 0}</span></td>
+              <td class="p-4 text-center"><span class="${c.Activo === 'No' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'} px-2.5 py-1 rounded-full text-xs font-bold">${c.Activo === 'No' ? 'INACTIVO' : 'ACTIVO'}</span></td>
+              <td class="p-4 text-center">
+                <div class="flex items-center justify-center gap-1">
+                  <button onclick="openCourseEditor('${c.CursoID}')" class="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition" title="Editar">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button onclick="confirmDeleteCurso('${c.CursoID}', '${escapeJS(c.Titulo || '')}')" class="p-2 text-red-500 hover:bg-red-100 rounded-lg transition" title="Eliminar">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>`);
+        });
+      }
+
+      function filterAdminCourses() {
+        const search = (document.getElementById('admin-courses-search').value || '').toLowerCase();
+        const unidad = document.getElementById('admin-courses-filter-unidad').value;
+        const rows = document.querySelectorAll('#admin-courses-tbody tr[data-unidad]');
+        rows.forEach(row => {
+          const text = row.textContent.toLowerCase();
+          const rowUnidad = row.getAttribute('data-unidad');
+          const matchSearch = !search || text.includes(search);
+          const matchUnidad = !unidad || rowUnidad === unidad;
+          row.style.display = (matchSearch && matchUnidad) ? '' : 'none';
+        });
+      }
+
+      function confirmDeleteCurso(cursoId, titulo) {
+        showConfirm(`¿Eliminar el curso "${titulo}"? Se borrarán también sus preguntas y configuración.`, () => {
+          google.script.run
+            .withSuccessHandler(res => {
+              if (res.status === 'success') {
+                showToast('Curso eliminado correctamente', 'success');
+                loadAdminCourses();
+              } else {
+                showToast(res.message || 'Error al eliminar', 'error');
+              }
+            })
+            .withFailureHandler(err => showToast('Error: ' + (err.message || err), 'error'))
+            .deleteCursoAdmin(currentUser.email, cursoId);
+        });
+      }
+
+      // ══════════════════════════════════════
+      // ADMIN: EDITOR DE CURSO
+      // ══════════════════════════════════════
+      function openCourseEditor(cursoId) {
+        editingCourseId = cursoId;
+        editorQuestions = [];
+
+        // Clear form
+        document.getElementById('editor-titulo').value = '';
+        document.getElementById('editor-descripcion').value = '';
+        document.getElementById('editor-tipo').value = 'video';
+        document.getElementById('editor-unidad').value = '';
+        document.getElementById('editor-enlace').value = '';
+        document.getElementById('editor-activo').checked = true;
+        document.getElementById('editor-puntaje-min').value = '70';
+        document.getElementById('editor-intentos-max').value = '3';
+        document.getElementById('editor-tiempo').value = '30';
+        document.getElementById('editor-total-preguntas').value = '0';
+        document.getElementById('editor-aleatorio').checked = false;
+
+        if (cursoId) {
+          // Load existing course data
+          navigate('admin-course-editor');
+          const container = document.getElementById('editor-questions-container');
+          container.innerHTML = '<div class="text-center py-8"><i class="fas fa-circle-notch fa-spin fa-2x text-blue-600"></i><p class="mt-3 text-gray-500 text-sm">Cargando datos del curso...</p></div>';
+
+          google.script.run
+            .withSuccessHandler(data => {
+              if (data.status !== 'success') {
+                showToast(data.message || 'Error al cargar curso', 'error');
+                navigate('admin-courses');
+                return;
+              }
+
+              const c = data.curso;
+              document.getElementById('editor-titulo').value = c.Titulo || '';
+              document.getElementById('editor-descripcion').value = c.Descripcion || '';
+              document.getElementById('editor-tipo').value = (c.Tipo || 'video').toLowerCase();
+              document.getElementById('editor-unidad').value = c.Unidad || '';
+              document.getElementById('editor-enlace').value = c.EnlaceContenido || '';
+              document.getElementById('editor-activo').checked = (c.Activo !== 'No');
+
+              if (data.config) {
+                const cfg = data.config;
+                document.getElementById('editor-puntaje-min').value = cfg.PuntajeMinimo || '70';
+                document.getElementById('editor-intentos-max').value = cfg.IntentosMax || '3';
+                document.getElementById('editor-tiempo').value = cfg.TiempoLimiteMin || '30';
+                document.getElementById('editor-total-preguntas').value = cfg.TotalPreguntas || '0';
+                document.getElementById('editor-aleatorio').checked = (cfg.Aleatorio === 'Sí' || cfg.Aleatorio === true);
+              }
+
+              editorQuestions = (data.preguntas || []).map(p => ({
+                Texto: p.Texto || '',
+                OpcionA: p.OpcionA || '',
+                OpcionB: p.OpcionB || '',
+                OpcionC: p.OpcionC || '',
+                OpcionD: p.OpcionD || '',
+                RespuestaCorrecta: p.RespuestaCorrecta || 'A',
+                Puntos: Number(p.Puntos) || 10
+              }));
+
+              renderEditorQuestions();
+            })
+            .withFailureHandler(err => {
+              showToast('Error: ' + (err.message || err), 'error');
+              navigate('admin-courses');
+            })
+            .getCursoCompleto(currentUser.email, cursoId);
+        } else {
+          // New course
+          renderEditorQuestions();
+          navigate('admin-course-editor');
+        }
+      }
+
+      function addEditorQuestion() {
+        syncEditorQuestionsFromDOM();
+        editorQuestions.push({
+          Texto: '', OpcionA: '', OpcionB: '', OpcionC: '', OpcionD: '',
+          RespuestaCorrecta: 'A', Puntos: 10
+        });
+        renderEditorQuestions();
+        // Scroll to the new question
+        setTimeout(() => {
+          const cards = document.querySelectorAll('.question-card');
+          if (cards.length > 0) cards[cards.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+
+      function removeEditorQuestion(index) {
+        syncEditorQuestionsFromDOM();
+        editorQuestions.splice(index, 1);
+        renderEditorQuestions();
+      }
+
+      function syncEditorQuestionsFromDOM() {
+        const cards = document.querySelectorAll('[data-question-index]');
+        cards.forEach(card => {
+          const idx = parseInt(card.getAttribute('data-question-index'));
+          if (editorQuestions[idx]) {
+            editorQuestions[idx].Texto = (card.querySelector('.q-texto') || {}).value || '';
+            editorQuestions[idx].OpcionA = (card.querySelector('.q-a') || {}).value || '';
+            editorQuestions[idx].OpcionB = (card.querySelector('.q-b') || {}).value || '';
+            editorQuestions[idx].OpcionC = (card.querySelector('.q-c') || {}).value || '';
+            editorQuestions[idx].OpcionD = (card.querySelector('.q-d') || {}).value || '';
+            editorQuestions[idx].RespuestaCorrecta = (card.querySelector('.q-correcta') || {}).value || 'A';
+            editorQuestions[idx].Puntos = Number((card.querySelector('.q-puntos') || {}).value) || 10;
+          }
+        });
+      }
+
+      function renderEditorQuestions() {
+        const container = document.getElementById('editor-questions-container');
+        document.getElementById('editor-questions-count').textContent = editorQuestions.length;
+
+        if (editorQuestions.length === 0) {
+          container.innerHTML = '<p class="text-gray-400 text-center py-8 italic"><i class="fas fa-question-circle text-3xl mb-2 block text-gray-300"></i>No hay preguntas configuradas.<br>Haz clic en "Agregar Pregunta" para comenzar.</p>';
+          return;
+        }
+
+        container.innerHTML = editorQuestions.map((q, i) => `
+          <div class="question-card border border-gray-200 rounded-xl p-5 mb-4 bg-gray-50/50" data-question-index="${i}">
+            <div class="flex justify-between items-center mb-4">
+              <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-bold">Pregunta ${i + 1}</span>
+              <button type="button" onclick="removeEditorQuestion(${i})" class="text-red-400 hover:text-red-600 transition p-1" title="Eliminar pregunta">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </div>
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs text-gray-500 font-semibold mb-1 uppercase">Texto de la pregunta *</label>
+                <textarea class="q-texto w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none" rows="2" placeholder="Escribe la pregunta aquí..."></textarea>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs text-gray-500 font-semibold mb-1">Opción A *</label>
+                  <input type="text" class="q-a w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Primera opción">
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-500 font-semibold mb-1">Opción B *</label>
+                  <input type="text" class="q-b w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Segunda opción">
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-500 font-semibold mb-1">Opción C <span class="text-gray-400 font-normal">(opcional)</span></label>
+                  <input type="text" class="q-c w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Tercera opción">
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-500 font-semibold mb-1">Opción D <span class="text-gray-400 font-normal">(opcional)</span></label>
+                  <input type="text" class="q-d w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Cuarta opción">
+                </div>
+              </div>
+              <div class="flex items-center gap-4 pt-1">
+                <div>
+                  <label class="block text-xs text-gray-500 font-semibold mb-1">Respuesta Correcta</label>
+                  <select class="q-correcta border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-purple-500 outline-none bg-white">
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-500 font-semibold mb-1">Puntos</label>
+                  <input type="number" class="q-puntos border border-gray-300 rounded-lg p-2.5 text-sm w-20 focus:ring-2 focus:ring-purple-500 outline-none" min="1" value="10">
+                </div>
+              </div>
+            </div>
+          </div>
+        `).join('');
+
+        // Set values programmatically to avoid XSS issues
+        editorQuestions.forEach((q, i) => {
+          const card = container.querySelector(`[data-question-index="${i}"]`);
+          if (card) {
+            card.querySelector('.q-texto').value = q.Texto || '';
+            card.querySelector('.q-a').value = q.OpcionA || '';
+            card.querySelector('.q-b').value = q.OpcionB || '';
+            card.querySelector('.q-c').value = q.OpcionC || '';
+            card.querySelector('.q-d').value = q.OpcionD || '';
+            card.querySelector('.q-correcta').value = q.RespuestaCorrecta || 'A';
+            card.querySelector('.q-puntos').value = q.Puntos || 10;
+          }
+        });
+      }
+
+      function saveCourseEditor() {
+        // Validate
+        const titulo = document.getElementById('editor-titulo').value.trim();
+        if (!titulo) {
+          showToast('El título del curso es obligatorio', 'error');
+          document.getElementById('editor-titulo').focus();
+          return;
+        }
+
+        // Sync questions from DOM
+        syncEditorQuestionsFromDOM();
+
+        // Validate questions
+        for (let i = 0; i < editorQuestions.length; i++) {
+          const q = editorQuestions[i];
+          if (!q.Texto.trim()) {
+            showToast(`La pregunta ${i + 1} no tiene texto`, 'error');
+            return;
+          }
+          if (!q.OpcionA.trim() || !q.OpcionB.trim()) {
+            showToast(`La pregunta ${i + 1} necesita al menos opciones A y B`, 'error');
+            return;
+          }
+        }
+
+        const btn = document.getElementById('btn-save-course');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        btn.disabled = true;
+
+        const cursoData = {
+          CursoID: editingCourseId || null,
+          Titulo: titulo,
+          Descripcion: document.getElementById('editor-descripcion').value.trim(),
+          Tipo: document.getElementById('editor-tipo').value,
+          EnlaceContenido: document.getElementById('editor-enlace').value.trim(),
+          Unidad: document.getElementById('editor-unidad').value.trim(),
+          Activo: document.getElementById('editor-activo').checked ? 'Sí' : 'No'
+        };
+
+        const configData = {
+          PuntajeMinimo: Number(document.getElementById('editor-puntaje-min').value) || 70,
+          IntentosMax: Number(document.getElementById('editor-intentos-max').value) || 3,
+          TiempoLimiteMin: Number(document.getElementById('editor-tiempo').value) || 30,
+          TotalPreguntas: Number(document.getElementById('editor-total-preguntas').value) || 0,
+          Aleatorio: document.getElementById('editor-aleatorio').checked
+        };
+
+        google.script.run
+          .withSuccessHandler(res => {
+            btn.innerHTML = '<i class="fas fa-save"></i> Guardar Curso';
+            btn.disabled = false;
+            if (res.status === 'success') {
+              showToast(res.message || 'Curso guardado exitosamente', 'success');
+              navigate('admin-courses');
+            } else {
+              showToast(res.message || 'Error al guardar', 'error');
+            }
+          })
+          .withFailureHandler(err => {
+            btn.innerHTML = '<i class="fas fa-save"></i> Guardar Curso';
+            btn.disabled = false;
+            showToast('Error: ' + (err.message || err), 'error');
+          })
+          .saveCursoCompleto(currentUser.email, cursoData, configData, editorQuestions);
+      }
+
+      function previewEditorCourse() {
+        const enlace = document.getElementById('editor-enlace').value.trim();
+        if (enlace) {
+          window.open(enlace, '_blank', 'noopener');
+        } else {
+          showToast('No hay enlace de contenido para previsualizar', 'warning');
+        }
+      }
+
+      // ══════════════════════════════════════
+      // ADMIN: GESTIÓN DE USUARIOS
+      // ══════════════════════════════════════
+      function loadAdminUsers() {
+        const tbody = document.getElementById('admin-users-tbody');
+        const loader = document.getElementById('admin-users-loader');
+        loader.classList.remove('hidden');
+        tbody.innerHTML = '';
+
+        google.script.run
+          .withSuccessHandler(users => {
+            loader.classList.add('hidden');
+            adminUsersCache = Array.isArray(users) ? users : [];
+            renderAdminUsersTable();
+          })
+          .withFailureHandler(err => {
+            loader.classList.add('hidden');
+            tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-red-500">Error: ${err.message || err}</td></tr>`;
+          })
+          .getUsuariosAdmin(currentUser.email);
+      }
+
+      function renderAdminUsersTable() {
+        const tbody = document.getElementById('admin-users-tbody');
+        tbody.innerHTML = '';
+
+        if (adminUsersCache.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-gray-400">No hay usuarios registrados</td></tr>';
+          return;
+        }
+
+        const roleColors = {
+          administrador: 'bg-red-100 text-red-700',
+          gerente: 'bg-purple-100 text-purple-700',
+          supervisor: 'bg-amber-100 text-amber-700',
+          colaborador: 'bg-blue-100 text-blue-700'
+        };
+
+        adminUsersCache.forEach(u => {
+          const roleColor = roleColors[(u.Rol || '').toLowerCase()] || 'bg-gray-100 text-gray-700';
+          const nombre = ((u.Nombre || '') + ' ' + (u.Apellido || '')).trim() || '-';
+          const isSelf = normalizeEmailJS(u.Email) === normalizeEmailJS(currentUser.email);
+
+          tbody.insertAdjacentHTML('beforeend', `
+            <tr class="hover:bg-blue-50/50 transition">
+              <td class="p-4 text-gray-500 font-mono text-xs">${u.ID}</td>
+              <td class="p-4 font-medium text-gray-800">${escapeHtml(u.Email || '')}</td>
+              <td class="p-4 text-gray-700">${escapeHtml(nombre)}</td>
+              <td class="p-4"><span class="admin-badge ${roleColor}">${escapeHtml((u.Rol || 'N/A').toUpperCase())}</span></td>
+              <td class="p-4 text-center">
+                <div class="flex items-center justify-center gap-1">
+                  <button onclick="openUserModal('${u.ID}')" class="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition" title="Editar">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button onclick="resetPassword('${u.ID}', '${escapeJS(u.Email || '')}')" class="p-2 text-amber-600 hover:bg-amber-100 rounded-lg transition" title="Resetear contraseña">
+                    <i class="fas fa-key"></i>
+                  </button>
+                  ${!isSelf ? `<button onclick="confirmDeleteUser('${u.ID}', '${escapeJS(u.Email || '')}')" class="p-2 text-red-500 hover:bg-red-100 rounded-lg transition" title="Eliminar">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>` : ''}
+                </div>
+              </td>
+            </tr>`);
+        });
+      }
+
+      function filterAdminUsers() {
+        const search = (document.getElementById('admin-users-search').value || '').toLowerCase();
+        const rows = document.querySelectorAll('#admin-users-tbody tr');
+        rows.forEach(row => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = !search || text.includes(search) ? '' : 'none';
+        });
+      }
+
+      function openUserModal(userId) {
+        const isEdit = !!userId;
+        const user = isEdit ? adminUsersCache.find(u => String(u.ID) === String(userId)) : null;
+
+        document.getElementById('admin-modal-title').textContent = isEdit ? 'Editar Usuario' : 'Nuevo Usuario';
+        document.getElementById('admin-modal-body').innerHTML = `
+          <form onsubmit="saveUserModal(event)" class="space-y-4">
+            <input type="hidden" id="user-form-id" value="${isEdit ? userId : ''}">
+            <div>
+              <label class="block text-xs text-gray-500 font-semibold mb-1 uppercase">Email *</label>
+              <input type="email" id="user-form-email" value="${isEdit ? escapeAttr(user.Email || '') : ''}" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="correo@empresa.com" required ${isEdit ? 'readonly class="bg-gray-100"' : ''}>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs text-gray-500 font-semibold mb-1 uppercase">Nombre</label>
+                <input type="text" id="user-form-nombre" value="${isEdit ? escapeAttr(user.Nombre || '') : ''}" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Nombre">
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 font-semibold mb-1 uppercase">Apellido</label>
+                <input type="text" id="user-form-apellido" value="${isEdit ? escapeAttr(user.Apellido || '') : ''}" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Apellido">
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 font-semibold mb-1 uppercase">Rol</label>
+              <select id="user-form-rol" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                <option value="colaborador" ${isEdit && (user.Rol || '').toLowerCase() === 'colaborador' ? 'selected' : ''}>Colaborador</option>
+                <option value="supervisor" ${isEdit && (user.Rol || '').toLowerCase() === 'supervisor' ? 'selected' : ''}>Supervisor</option>
+                <option value="gerente" ${isEdit && (user.Rol || '').toLowerCase() === 'gerente' ? 'selected' : ''}>Gerente</option>
+                <option value="administrador" ${isEdit && (user.Rol || '').toLowerCase() === 'administrador' ? 'selected' : ''}>Administrador</option>
+              </select>
+            </div>
+            ${!isEdit ? `<div>
+              <label class="block text-xs text-gray-500 font-semibold mb-1 uppercase">Contraseña Inicial</label>
+              <input type="text" id="user-form-password" value="123456" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Contraseña">
+              <p class="text-xs text-gray-400 mt-1">El usuario podrá cambiarla después del primer inicio de sesión.</p>
+            </div>` : ''}
+            <div>
+              <label class="block text-xs text-gray-500 font-semibold mb-1 uppercase">URL Foto de Perfil <span class="text-gray-400 font-normal">(opcional)</span></label>
+              <input type="url" id="user-form-foto" value="${isEdit ? escapeAttr(user.Foto || '') : ''}" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="https://...">
+            </div>
+            <div class="flex justify-end gap-3 pt-4 border-t">
+              <button type="button" onclick="closeAdminModal()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 transition">Cancelar</button>
+              <button type="submit" id="btn-save-user" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition">
+                <i class="fas fa-save mr-1"></i> ${isEdit ? 'Actualizar' : 'Crear Usuario'}
+              </button>
+            </div>
+          </form>`;
+        document.getElementById('admin-modal').classList.remove('hidden');
+      }
+
+      function saveUserModal(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btn-save-user');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        btn.disabled = true;
+
+        const id = document.getElementById('user-form-id').value;
+        const userData = {
+          ID: id || null,
+          Email: document.getElementById('user-form-email').value.trim(),
+          Nombre: document.getElementById('user-form-nombre').value.trim(),
+          Apellido: document.getElementById('user-form-apellido').value.trim(),
+          Rol: document.getElementById('user-form-rol').value,
+          Foto: document.getElementById('user-form-foto').value.trim()
+        };
+
+        const passEl = document.getElementById('user-form-password');
+        if (passEl) userData.Password = passEl.value;
+
+        google.script.run
+          .withSuccessHandler(res => {
+            btn.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar';
+            btn.disabled = false;
+            if (res.status === 'success') {
+              closeAdminModal();
+              showToast(res.message || 'Usuario guardado exitosamente', 'success');
+              loadAdminUsers();
+            } else {
+              showToast(res.message || 'Error al guardar', 'error');
+            }
+          })
+          .withFailureHandler(err => {
+            btn.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar';
+            btn.disabled = false;
+            showToast('Error: ' + (err.message || err), 'error');
+          })
+          .saveUsuarioAdmin(currentUser.email, userData);
+      }
+
+      function confirmDeleteUser(userId, email) {
+        showConfirm(`¿Eliminar al usuario "${email}"? Esta acción no se puede deshacer.`, () => {
+          google.script.run
+            .withSuccessHandler(res => {
+              if (res.status === 'success') {
+                showToast('Usuario eliminado', 'success');
+                loadAdminUsers();
+              } else {
+                showToast(res.message || 'Error', 'error');
+              }
+            })
+            .withFailureHandler(err => showToast('Error: ' + (err.message || err), 'error'))
+            .deleteUsuarioAdmin(currentUser.email, userId);
+        });
+      }
+
+      function resetPassword(userId, email) {
+        showConfirm(`¿Restablecer la contraseña de "${email}" a 123456?`, () => {
+          google.script.run
+            .withSuccessHandler(res => {
+              if (res.status === 'success') {
+                showToast(res.message || 'Contraseña restablecida', 'success');
+              } else {
+                showToast(res.message || 'Error', 'error');
+              }
+            })
+            .withFailureHandler(err => showToast('Error: ' + (err.message || err), 'error'))
+            .resetPasswordAdmin(currentUser.email, userId);
+        });
+      }
+
+      // ══════════════════════════════════════
+      // ADMIN: REPORTES
+      // ══════════════════════════════════════
+      function loadAdminReports() {
+        const tbody = document.getElementById('admin-reports-tbody');
+        const loader = document.getElementById('admin-reports-loader');
+        loader.classList.remove('hidden');
+        tbody.innerHTML = '';
+
+        google.script.run
+          .withSuccessHandler(data => {
+            loader.classList.add('hidden');
+            reporteCache = Array.isArray(data) ? data : [];
+            renderAdminReports();
+          })
+          .withFailureHandler(err => {
+            loader.classList.add('hidden');
+            tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-red-500">Error: ${err.message || err}</td></tr>`;
+          })
+          .getReporteProgreso(currentUser.email);
+      }
+
+      function renderAdminReports() {
+        const tbody = document.getElementById('admin-reports-tbody');
+        tbody.innerHTML = '';
+
+        if (reporteCache.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-gray-400">No hay datos de progreso aún</td></tr>';
+          return;
+        }
+
+        reporteCache.forEach(r => {
+          const isCompleted = (r.estado || '').toLowerCase() === 'completado';
+          const estadoClass = isCompleted ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
+          const notaColor = r.nota >= 70 ? 'text-green-700 font-bold' : (r.nota > 0 ? 'text-red-600 font-bold' : 'text-gray-500');
+
+          tbody.insertAdjacentHTML('beforeend', `
+            <tr class="hover:bg-gray-50 transition">
+              <td class="p-4 font-medium text-gray-800">${escapeHtml(r.nombreUsuario || '')}</td>
+              <td class="p-4 text-gray-600">${escapeHtml(r.email || '')}</td>
+              <td class="p-4 text-gray-700">${escapeHtml(r.cursoTitulo || '')}</td>
+              <td class="p-4 text-center"><span class="admin-badge ${estadoClass}">${escapeHtml((r.estado || 'pendiente').toUpperCase())}</span></td>
+              <td class="p-4 text-center ${notaColor}">${r.nota}</td>
+              <td class="p-4 text-center text-gray-600">${r.intentos}</td>
+            </tr>`);
+        });
+      }
+
+      function filterAdminReports() {
+        const search = (document.getElementById('admin-reports-search').value || '').toLowerCase();
+        const rows = document.querySelectorAll('#admin-reports-tbody tr');
+        rows.forEach(row => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = !search || text.includes(search) ? '' : 'none';
+        });
+      }
+
+      function exportReportCSV() {
+        if (!reporteCache || reporteCache.length === 0) {
+          showToast('No hay datos para exportar', 'warning');
+          return;
+        }
+
+        const headers = ['Usuario', 'Email', 'Curso', 'Estado', 'Nota', 'Intentos'];
+        const rows = reporteCache.map(r => [
+          r.nombreUsuario || '',
+          r.email || '',
+          r.cursoTitulo || '',
+          r.estado || '',
+          r.nota,
+          r.intentos
+        ]);
+
+        let csv = headers.join(',') + '\n';
+        rows.forEach(row => {
+          csv += row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',') + '\n';
+        });
+
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'reporte_progreso_' + new Date().toISOString().slice(0, 10) + '.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Reporte exportado como CSV', 'success');
+      }
+
+      // ══════════════════════════════════════
+      // UTILITIES
+      // ══════════════════════════════════════
+      function closeModal() {
+        document.getElementById('modal').classList.add('hidden');
+        if (quizTimerId) { clearInterval(quizTimerId); quizTimerId = null; }
+        document.getElementById('quiz-timer').classList.add('hidden');
+      }
+
+      function closeAdminModal() {
+        document.getElementById('admin-modal').classList.add('hidden');
+      }
+
+      function showConfirm(message, callback) {
+        document.getElementById('confirm-msg').textContent = message;
+        confirmCallback = callback;
+        const btn = document.getElementById('confirm-btn');
+        btn.onclick = () => {
+          closeConfirm();
+          if (confirmCallback) confirmCallback();
+        };
+        document.getElementById('confirm-dialog').classList.remove('hidden');
+      }
+
+      function closeConfirm() {
+        document.getElementById('confirm-dialog').classList.add('hidden');
+        confirmCallback = null;
+      }
+
+      function showToast(message, type) {
+        const toast = document.getElementById('toast');
+        const inner = document.getElementById('toast-inner');
+        const icon = document.getElementById('toast-icon');
+        const msg = document.getElementById('toast-msg');
+
+        const styles = {
+          success: { bg: 'bg-green-600', icon: 'fa-check-circle' },
+          error: { bg: 'bg-red-600', icon: 'fa-times-circle' },
+          warning: { bg: 'bg-amber-500', icon: 'fa-exclamation-triangle' },
+          info: { bg: 'bg-blue-600', icon: 'fa-info-circle' }
+        };
+        const s = styles[type] || styles.info;
+
+        inner.className = `${s.bg} px-5 py-3 rounded-xl shadow-2xl text-white font-medium flex items-center gap-3 text-sm toast-enter`;
+        icon.className = `fas ${s.icon} text-lg`;
+        msg.textContent = message;
+
+        toast.classList.remove('hidden');
+
+        setTimeout(() => {
+          inner.classList.remove('toast-enter');
+          inner.classList.add('toast-exit');
+          setTimeout(() => {
+            toast.classList.add('hidden');
+            inner.classList.remove('toast-exit');
+          }, 300);
+        }, 3500);
+      }
 
       function animateValue(id, start, end, duration) {
         start = Number(start) || 0; end = Number(end) || 0;
@@ -587,6 +1922,50 @@
           if (current === end) clearInterval(timer);
         }, stepTime);
       }
+
+      function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str || '';
+        return div.innerHTML;
+      }
+
+      function escapeAttr(str) {
+        return (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+
+      function escapeJS(str) {
+        return (str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+      }
+
+      function normalizeEmailJS(email) {
+        return String(email || '').trim().toLowerCase();
+      }
+
+      function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        const isClosed = sidebar.classList.contains('-translate-x-full');
+        
+        if (isClosed) {
+          sidebar.classList.remove('-translate-x-full');
+          overlay.classList.remove('hidden');
+          // Small delay for smooth opacity transition
+          setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+        } else {
+          overlay.classList.add('opacity-0');
+          sidebar.classList.add('-translate-x-full');
+          setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+      }
+
+      // Auto-close sidebar on navigation (for better mobile/drawer experience)
+      const originalNavigate = navigate;
+      navigate = function(viewName) {
+        originalNavigate(viewName);
+        if (!document.getElementById('sidebar').classList.contains('-translate-x-full')) {
+          toggleSidebar();
+        }
+      };
     </script>
   </body>
 </html>
