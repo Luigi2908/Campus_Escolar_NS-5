@@ -59,6 +59,20 @@
       .question-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.06); }
       .pulse-dot { animation: pulseDot 2s infinite; }
       @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+      /* Estilo personalizado solicitado para todos los botones principales */
+      button[type="submit"],
+      button#btn-open-resource,
+      button#btn-start-quiz,
+      button[onclick^="openCourseEditor"],
+      button[onclick^="save"],
+      button[onclick^="delete"],
+      button.bg-blue-600,
+      button.bg-green-600,
+      button.bg-pastel-purpleDark {
+        background-color: #89FA5C !important;
+        color: white !important;
+      }
     </style>
   </head>
 
