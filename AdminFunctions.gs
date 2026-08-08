@@ -106,18 +106,35 @@ function saveCursoAdmin(adminEmail, cursoData) {
   ensureAdmin_(adminEmail);
   const sheet = openSheet_('Cursos');
   const data = sheet.getDataRange().getValues();
+  const headers = data[0] ? data[0].map(h => String(h).trim().toLowerCase()) : [];
+
+  // Encontrar índices de columnas dinámicamente (0-based)
+  // Fallbacks para los nombres de columnas que tiene el usuario actualmente
+  let idxTitulo = headers.indexOf('titulo'); if(idxTitulo===-1) idxTitulo = 1;
+  let idxDesc = headers.indexOf('descripcion'); if(idxDesc===-1) idxDesc = 2;
+  
+  let idxTipo = headers.indexOf('tipo');
+  if(idxTipo === -1) { idxTipo = headers.indexOf('categoria'); if(idxTipo!==-1) sheet.getRange(1, idxTipo+1).setValue('Tipo'); else idxTipo = 3; }
+  
+  let idxEnlace = headers.indexOf('enlacecontenido');
+  if(idxEnlace === -1) { idxEnlace = headers.indexOf('imagen'); if(idxEnlace!==-1) sheet.getRange(1, idxEnlace+1).setValue('EnlaceContenido'); else idxEnlace = 4; }
+  
+  let idxUnidad = headers.indexOf('unidad');
+  if(idxUnidad === -1) { idxUnidad = headers.indexOf('creadopor'); if(idxUnidad!==-1) sheet.getRange(1, idxUnidad+1).setValue('Unidad'); else idxUnidad = 5; }
+  
+  let idxActivo = headers.indexOf('activo');
+  if(idxActivo === -1) { idxActivo = 6; sheet.getRange(1, idxActivo+1).setValue('Activo'); }
 
   if (cursoData.CursoID) {
     // ── UPDATE ──
     for (let i = 1; i < data.length; i++) {
       if (String(data[i][0]) === String(cursoData.CursoID)) {
-        sheet.getRange(i + 1, 2).setValue(cursoData.Titulo || '');
-        sheet.getRange(i + 1, 3).setValue(cursoData.Descripcion || '');
-        sheet.getRange(i + 1, 4).setValue(cursoData.Tipo || 'video');
-        sheet.getRange(i + 1, 5).setValue(cursoData.EnlaceContenido || '');
-        sheet.getRange(i + 1, 6).setValue(cursoData.Unidad || '');
-        sheet.getRange(1, 7).setValue('Activo'); // Garantizar encabezado
-        sheet.getRange(i + 1, 7).setValue(cursoData.Activo || 'Sí');
+        sheet.getRange(i + 1, idxTitulo + 1).setValue(cursoData.Titulo || '');
+        sheet.getRange(i + 1, idxDesc + 1).setValue(cursoData.Descripcion || '');
+        sheet.getRange(i + 1, idxTipo + 1).setValue(cursoData.Tipo || 'video');
+        sheet.getRange(i + 1, idxEnlace + 1).setValue(cursoData.EnlaceContenido || '');
+        sheet.getRange(i + 1, idxUnidad + 1).setValue(cursoData.Unidad || '');
+        sheet.getRange(i + 1, idxActivo + 1).setValue(cursoData.Activo || 'Sí');
         logAudit(adminEmail, 'Admin: Curso actualizado - ' + cursoData.Titulo, 0);
         return { status: 'success', cursoId: String(cursoData.CursoID) };
       }
@@ -131,16 +148,18 @@ function saveCursoAdmin(adminEmail, cursoData) {
       if (id > maxId) maxId = id;
     }
     const newId = maxId + 1;
-    sheet.getRange(1, 7).setValue('Activo'); // Garantizar encabezado
-    sheet.appendRow([
-      newId,
-      cursoData.Titulo || '',
-      cursoData.Descripcion || '',
-      cursoData.Tipo || 'video',
-      cursoData.EnlaceContenido || '',
-      cursoData.Unidad || '',
-      cursoData.Activo || 'Sí'
-    ]);
+    
+    // Crear un array vacío del tamaño de las cabeceras
+    let newRow = new Array(headers.length).fill('');
+    newRow[0] = newId;
+    newRow[idxTitulo] = cursoData.Titulo || '';
+    newRow[idxDesc] = cursoData.Descripcion || '';
+    newRow[idxTipo] = cursoData.Tipo || 'video';
+    newRow[idxEnlace] = cursoData.EnlaceContenido || '';
+    newRow[idxUnidad] = cursoData.Unidad || '';
+    newRow[idxActivo] = cursoData.Activo || 'Sí';
+
+    sheet.appendRow(newRow);
     logAudit(adminEmail, 'Admin: Curso creado - ' + cursoData.Titulo, 0);
     return { status: 'success', cursoId: String(newId) };
   }
