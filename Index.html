@@ -352,7 +352,7 @@
 
         <!-- ═══════════════ AULA ═══════════════ -->
         <div id="view-classroom" class="view-section hidden fade-in">
-          <div class="mb-6 flex items-center justify-between">
+          <div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div class="flex items-center space-x-3">
               <button type="button" onclick="navigate('courses')" class="px-4 py-2 bg-white rounded-lg shadow-sm border hover:bg-gray-50 transition text-gray-700">
                 <i class="fas fa-arrow-left mr-2"></i> Volver a Cursos
@@ -362,7 +362,16 @@
                 <p id="classroom-subtitle" class="text-sm text-gray-500">Aula virtual</p>
               </div>
             </div>
-            <div id="classroom-status" class="text-xs font-bold px-3 py-1 rounded-full bg-gray-200 text-gray-700 uppercase tracking-wide">PENDIENTE</div>
+            <div class="flex flex-col items-end">
+              <div class="flex items-center gap-3 mb-1">
+                <span class="text-xs font-bold text-gray-500 uppercase">Progreso del Curso</span>
+                <span id="classroom-progress-text" class="text-sm font-extrabold text-blue-600">0%</span>
+                <div id="classroom-status" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-200 text-gray-700 uppercase tracking-wide">PENDIENTE</div>
+              </div>
+              <div class="w-48 h-2.5 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+                <div id="classroom-progress-bar" class="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-1000" style="width: 0%"></div>
+              </div>
+            </div>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -821,7 +830,9 @@
       let currentUser = null;
       let chartInstance = null;
       let coursesCache = [];
-      let currentCourseId = null;
+      let groupedCoursesCache = {};
+      let currentCourseTitle = null;
+      let currentModuleId = null;
 
       // Admin state
       let adminCoursesCache = [];
@@ -1008,31 +1019,73 @@
 
         google.script.run.withSuccessHandler(courses => {
           coursesCache = Array.isArray(courses) ? courses : [];
+          groupedCoursesCache = {};
           loader.classList.add('hidden');
-          if (!courses || courses.length === 0) {
+          
+          if (coursesCache.length === 0) {
             grid.innerHTML = '<p class="text-gray-500 col-span-3 text-center">No hay cursos asignados.</p>';
             return;
           }
-          courses.forEach(c => {
-            const isCompleted = (c.status || '').toLowerCase() === 'completado';
+
+          // Agrupar cursos (módulos) por Título del Curso
+          coursesCache.forEach(c => {
+            const titulo = (c.Titulo || 'Curso sin título').trim();
+            if (!groupedCoursesCache[titulo]) {
+              groupedCoursesCache[titulo] = {
+                Titulo: titulo,
+                Descripcion: c.Descripcion || '',
+                modulos: []
+              };
+            }
+            groupedCoursesCache[titulo].modulos.push(c);
+          });
+
+          const groupedArray = Object.values(groupedCoursesCache);
+
+          groupedArray.forEach(gc => {
+            // Ordenar los módulos (por ejemplo, alfabéticamente por unidad, o por ID)
+            gc.modulos.sort((a, b) => String(a.Unidad || '').localeCompare(String(b.Unidad || '')));
+
+            const total = gc.modulos.length;
+            const completed = gc.modulos.filter(m => (m.status || '').toLowerCase() === 'completado').length;
+            const isCompleted = (total > 0 && completed === total);
+            const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
+            
+            gc.overallStatus = isCompleted ? 'completado' : 'pendiente';
+            gc.progressPercent = progressPercent;
+
             const statusClass = isCompleted ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
             const statusIcon = isCompleted ? 'fa-check-circle' : 'fa-hourglass-half';
-            const iconType = c.Tipo === 'video' ? 'fa-play-circle' : 'fa-file-pdf';
-            const bgHeader = c.Tipo === 'video' ? 'bg-indigo-600' : 'bg-red-600';
+            
+            // Usamos el tipo del primer módulo para el color de la tarjeta
+            const firstType = (gc.modulos[0] && gc.modulos[0].Tipo) || 'video';
+            const bgHeader = firstType === 'video' ? 'bg-indigo-600' : 'bg-red-600';
+            const iconType = firstType === 'video' ? 'fa-play-circle' : 'fa-file-pdf';
 
             const card = `<div class="bg-white rounded-xl shadow-sm hover:shadow-xl transition duration-300 overflow-hidden border border-gray-100 flex flex-col h-full">
                 <div class="h-40 ${bgHeader} relative flex items-center justify-center text-white">
                   <i class="fas ${iconType} fa-4x opacity-80"></i>
-                  <div class="absolute top-4 right-4 bg-white/20 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold uppercase">${c.Unidad || ''}</div>
+                  <div class="absolute top-4 right-4 bg-white/20 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold uppercase">${total} Módulo${total > 1 ? 's' : ''}</div>
                 </div>
                 <div class="p-6 flex-1 flex flex-col">
-                  <h3 class="font-bold text-lg text-gray-800 mb-2 leading-tight">${c.Titulo || ''}</h3>
-                  <p class="text-gray-500 text-sm mb-4 line-clamp-3 flex-1">${c.Descripcion || ''}</p>
-                  <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
+                  <h3 class="font-bold text-lg text-gray-800 mb-2 leading-tight">${escapeHtml(gc.Titulo)}</h3>
+                  <p class="text-gray-500 text-sm mb-4 line-clamp-3 flex-1">${escapeHtml(gc.Descripcion)}</p>
+                  
+                  <div class="mb-4">
+                    <div class="flex justify-between text-xs mb-1">
+                      <span class="font-bold text-gray-500">Progreso</span>
+                      <span class="font-bold text-blue-600">${progressPercent}%</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div class="h-full bg-blue-500 rounded-full" style="width: ${progressPercent}%"></div>
+                    </div>
+                  </div>
+
+                  <div class="mt-2 pt-4 border-t border-gray-100 flex justify-between items-center">
                     <span class="flex items-center space-x-1 text-xs font-bold px-2 py-1 rounded-full ${statusClass}">
-                      <i class="fas ${statusIcon}"></i><span>${String(c.status || 'pendiente').toUpperCase()}</span>
+                      <i class="fas ${statusIcon}"></i><span>${String(gc.overallStatus).toUpperCase()}</span>
                     </span>
-                    <button onclick="openCourse(${JSON.stringify(c.CursoID)})" class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition shadow-lg">Acceder</button>
+                    <button onclick="openCourse('${escapeJS(gc.Titulo)}')" class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition shadow-lg">Acceder</button>
                   </div>
                 </div>
               </div>`;
@@ -1075,12 +1128,15 @@
       // ══════════════════════════════════════
       // STUDENT: CLASSROOM
       // ══════════════════════════════════════
-      function openCourse(cursoId) {
-        const id = String(cursoId);
-        currentCourseId = id;
-        const course = (coursesCache || []).find(c => String(c.CursoID) === id);
-        if (!course) { loadCoursesData(); alert('No se encontró el curso. Intenta de nuevo.'); return; }
-        renderClassroom(course);
+      function openCourse(titulo) {
+        currentCourseTitle = titulo;
+        const gc = groupedCoursesCache[titulo];
+        if (!gc) { loadCoursesData(); alert('No se encontró el curso. Intenta de nuevo.'); return; }
+        
+        // Auto-seleccionar el primer módulo incompleto, o el primer módulo si todos están completos
+        let firstIncomplete = gc.modulos.find(m => (m.status || '').toLowerCase() !== 'completado') || gc.modulos[0];
+        
+        renderGroupedClassroom(gc, firstIncomplete.CursoID);
         navigate('classroom');
       }
 
@@ -1104,18 +1160,90 @@
         return u;
       }
 
-      function renderClassroom(course) {
-        const status = (course.status || 'pendiente').toLowerCase();
-        const isCompleted = status === 'completado';
-
-        document.getElementById('classroom-title').textContent = course.Titulo || 'Curso';
-        document.getElementById('classroom-subtitle').textContent = course.Unidad ? `Unidad: ${course.Unidad}` : 'Aula virtual';
+      function renderGroupedClassroom(gc, moduleIdToSelect) {
+        // Headers and Progress Bar
+        document.getElementById('classroom-title').textContent = gc.Titulo;
+        document.getElementById('classroom-subtitle').textContent = gc.modulos.length + ' Módulo(s)';
+        
+        const total = gc.modulos.length;
+        const completed = gc.modulos.filter(m => (m.status || '').toLowerCase() === 'completado').length;
+        const isAllCompleted = (total > 0 && completed === total);
+        const progress = total > 0 ? Math.round((completed/total)*100) : 0;
+        
         const badge = document.getElementById('classroom-status');
-        badge.textContent = status.toUpperCase();
-        badge.className = 'text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide ' + (isCompleted ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700');
+        badge.textContent = isAllCompleted ? 'COMPLETADO' : 'PENDIENTE';
+        badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wide ' + (isAllCompleted ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700');
+        
+        document.getElementById('classroom-progress-text').textContent = progress + '%';
+        document.getElementById('classroom-progress-bar').style.width = progress + '%';
+        
+        // Show Global Feedback Button if all modules are completed
+        const feedbackBtn = document.getElementById('btn-open-feedback');
+        if (isAllCompleted) {
+          feedbackBtn.classList.remove('hidden');
+        } else {
+          feedbackBtn.classList.add('hidden');
+        }
 
-        const typeEl = document.getElementById('classroom-type');
+        // Render Modules Sidebar
+        const list = document.getElementById('classroom-course-list');
+        list.innerHTML = '';
+        
+        let prevCompleted = true; // El primer módulo siempre está desbloqueado
+
+        gc.modulos.forEach((m, idx) => {
+          const cid = String(m.CursoID);
+          const st = (m.status || 'pendiente').toLowerCase();
+          const isCompleted = st === 'completado';
+          
+          // Lógica Secuencial: El módulo está desbloqueado si el módulo anterior fue completado
+          const isUnlocked = prevCompleted || isCompleted;
+          
+          const active = cid === String(moduleIdToSelect);
+          
+          let icon = 'fa-lock text-gray-300';
+          if (isCompleted) icon = 'fa-check-circle text-green-600';
+          else if (isUnlocked) icon = 'fa-play-circle text-blue-500';
+
+          const row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'w-full text-left p-4 transition flex items-start space-x-3 ' + (active ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50 border-l-4 border-transparent') + (isUnlocked ? '' : ' opacity-50 cursor-not-allowed');
+          
+          row.innerHTML = `<i class="fas ${icon} mt-1"></i>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between space-x-2">
+                <p class="font-semibold text-sm ${active ? 'text-blue-800' : 'text-gray-800'} truncate">${m.Unidad || 'Módulo '+(idx+1)}</p>
+                <span class="text-[10px] px-2 py-0.5 rounded-full ${isCompleted ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'} uppercase">${isUnlocked ? st : 'bloqueado'}</span>
+              </div>
+              <p class="text-xs text-gray-500 truncate">${m.Tipo || 'recurso'}</p>
+            </div>`;
+            
+          if (isUnlocked) {
+            row.onclick = () => selectModuleInClassroom(cid);
+          }
+          
+          list.appendChild(row);
+          
+          // Actualizar 'prevCompleted' para el siguiente módulo de la lista
+          prevCompleted = isCompleted;
+        });
+
+        // Seleccionar visualmente el módulo indicado
+        selectModuleInClassroom(moduleIdToSelect);
+      }
+
+      function selectModuleInClassroom(moduleId) {
+        currentModuleId = String(moduleId);
+        const gc = groupedCoursesCache[currentCourseTitle];
+        if (!gc) return;
+        const course = gc.modulos.find(m => String(m.CursoID) === currentModuleId);
+        if (!course) return;
+
+        // Actualizar UI activa en sidebar
+        renderGroupedClassroom(gc, moduleId); // re-render sidebar to update selected state and locks if needed
+
         const tipo = (course.Tipo || '').toLowerCase();
+        const typeEl = document.getElementById('classroom-type');
         typeEl.textContent = (tipo || 'recurso').toUpperCase();
         typeEl.className = 'text-xs font-bold px-2 py-1 rounded uppercase ' + (tipo === 'video' ? 'bg-indigo-100 text-indigo-700' : 'bg-red-100 text-red-700');
 
@@ -1139,43 +1267,16 @@
           if (rawLink) {
             window.open(rawLink, '_blank', 'noopener');
           } else {
-            showToast('Este curso no tiene un enlace de recurso configurado', 'warning');
+            showToast('Este módulo no tiene un enlace de recurso configurado', 'warning');
           }
         };
 
-        document.getElementById('btn-start-quiz').onclick = () => {
+        const btnQuiz = document.getElementById('btn-start-quiz');
+        btnQuiz.onclick = () => {
           document.getElementById('modal').classList.remove('hidden');
-          document.getElementById('modal-title').textContent = 'Evaluación del Curso';
+          document.getElementById('modal-title').textContent = 'Evaluación del Módulo: ' + (course.Unidad || '');
           startQuiz(String(course.CursoID));
         };
-
-        if (tipo === 'presencial' || tipo === 'presencial' || tipo === 'videoconferencia') {
-          document.getElementById('btn-open-feedback').classList.remove('hidden');
-        } else {
-          document.getElementById('btn-open-feedback').classList.add('hidden');
-        }
-
-        const list = document.getElementById('classroom-course-list');
-        list.innerHTML = '';
-        (coursesCache || []).forEach(c => {
-          const cid = String(c.CursoID);
-          const st = (c.status || 'pendiente').toLowerCase();
-          const active = cid === String(course.CursoID);
-          const icon = (st === 'completado') ? 'fa-check-circle text-green-600' : 'fa-circle text-gray-300';
-          const row = document.createElement('button');
-          row.type = 'button';
-          row.className = 'w-full text-left p-4 hover:bg-gray-50 transition flex items-start space-x-3 ' + (active ? 'bg-blue-50' : '');
-          row.innerHTML = `<i class="fas ${icon} mt-1"></i>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center justify-between space-x-2">
-                <p class="font-semibold text-sm text-gray-800 truncate">${c.Titulo || 'Curso'}</p>
-                <span class="text-[10px] px-2 py-0.5 rounded-full ${st === 'completado' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'} uppercase">${st}</span>
-              </div>
-              <p class="text-xs text-gray-500 truncate">${c.Unidad || ''}</p>
-            </div>`;
-          row.onclick = () => openCourse(cid);
-          list.appendChild(row);
-        });
       }
 
       // ══════════════════════════════════════
@@ -1306,13 +1407,23 @@
             <p class="text-lg text-gray-600 mb-2">${passed ? '¡Felicidades! Has aprobado la evaluación.' : 'No alcanzaste el puntaje mínimo (' + minScore + '%).'}</p>
             <p class="text-sm text-gray-500 mb-6">Respuestas correctas: ${earnedPoints} de ${totalPoints} puntos</p>
             <div id="quiz-save-status" class="text-sm font-semibold text-blue-600 mb-4"><i class="fas fa-spinner fa-spin mr-2"></i>Guardando resultado en el servidor...</div>
-            <button id="btn-quiz-done" disabled onclick="closeModal(); navigate('dashboard');" class="bg-gray-800 text-white px-8 py-3 rounded-xl hover:bg-gray-900 transition font-bold shadow-lg opacity-50 cursor-not-allowed">
-              Volver al Panel
+            <button id="btn-quiz-done" disabled onclick="closeModal(); if(currentCourseTitle) openCourse(currentCourseTitle); else navigate('dashboard');" class="bg-gray-800 text-white px-8 py-3 rounded-xl hover:bg-gray-900 transition font-bold shadow-lg opacity-50 cursor-not-allowed">
+              Continuar
             </button>
           </div>`;
 
         google.script.run
           .withSuccessHandler(res => {
+            // Actualizar caché local instantáneamente
+            const c = coursesCache.find(x => String(x.CursoID) === String(cursoId));
+            if (c) c.status = passed ? 'completado' : 'pendiente';
+            
+            if (currentCourseTitle && groupedCoursesCache[currentCourseTitle]) {
+               const gc = groupedCoursesCache[currentCourseTitle];
+               const mc = gc.modulos.find(x => String(x.CursoID) === String(cursoId));
+               if (mc) mc.status = passed ? 'completado' : 'pendiente';
+            }
+
             const statusEl = document.getElementById('quiz-save-status');
             const btnEl = document.getElementById('btn-quiz-done');
             if (statusEl) {
@@ -1323,7 +1434,7 @@
               btnEl.disabled = false;
               btnEl.className = 'bg-gray-800 text-white px-8 py-3 rounded-xl hover:bg-gray-900 transition font-bold shadow-lg cursor-pointer';
             }
-            // Recargar datos y actualizar cache
+            // Recargar datos en background
             loadCoursesData();
             loadDashboardData();
           })
@@ -2223,8 +2334,8 @@
         }
         
         const data = {
-          cursoId: currentCourseData.id,
-          cursoTitulo: currentCourseData.titulo,
+          cursoId: currentCourseTitle,
+          cursoTitulo: currentCourseTitle,
           instructor: document.getElementById('fb-instructor').value,
           rating: rating,
           dominio: document.querySelector('input[name="fb-dominio"]:checked').value,
