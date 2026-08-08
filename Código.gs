@@ -106,7 +106,7 @@ function loginUser(email, password) {
 function getCursos(userEmail) {
   try {
     const emailN = normalizeEmail_(userEmail);
-    let cursos = getDataAsJson(openSheet_('Cursos'));
+    let cursos = getDataAsJson(openOrCreateSheet_('Cursos', ['CursoID', 'Titulo', 'Modulo', 'Enlace', 'Activo']));
     
     // Normalizar ID y filtrar inactivos
     cursos = cursos.map(c => ({
@@ -117,7 +117,7 @@ function getCursos(userEmail) {
       return activo !== 'no' && activo !== 'false' && activo !== '0' && activo !== 'inactivo';
     });
 
-    const progreso = getDataAsJson(openSheet_('Progreso')).filter(p => normalizeEmail_(p.Email) === emailN);
+    const progreso = getDataAsJson(openOrCreateSheet_('Progreso', ['Email', 'CursoID', 'Estado', 'Nota', 'Intentos'])).filter(p => normalizeEmail_(p.Email) === emailN);
 
     return cursos.map(c => {
       const userProg = progreso.find(p => {
@@ -148,7 +148,7 @@ function saveQuizResult(email, cursoId, score, passed) {
     const cId = String(cursoId);
     const sc = safeNumber_(score, 0);
 
-    const sheet = openSheet_('Progreso');
+    const sheet = openOrCreateSheet_('Progreso', ['Email', 'CursoID', 'Estado', 'Nota', 'Intentos']);
     const data = sheet.getDataRange().getValues();
     let found = false;
 
@@ -182,7 +182,7 @@ function saveQuizResult(email, cursoId, score, passed) {
 
 // ----------------- AUDITORÍA -----------------
 function logAudit(email, action, duration) {
-  const sheet = openSheet_('AuditoriaLog');
+  const sheet = openOrCreateSheet_('AuditoriaLog', ['Email', 'FechaHora', 'Accion', 'DuracionMinutos']);
   sheet.appendRow([normalizeEmail_(email), new Date(), safeStr_(action), safeNumber_(duration, 0)]);
 }
 
@@ -192,9 +192,9 @@ function getDashboardMetrics(email, role) {
     const e = normalizeEmail_(email);
     const r = safeStr_(role).toLowerCase();
 
-    const progData = getDataAsJson(openSheet_('Progreso'));
-    const auditData = getDataAsJson(openSheet_('AuditoriaLog')); 
-    const cursosDataRaw = getDataAsJson(openSheet_('Cursos'));
+    const progData = getDataAsJson(openOrCreateSheet_('Progreso', ['Email', 'CursoID', 'Estado', 'Nota', 'Intentos']));
+    const auditData = getDataAsJson(openOrCreateSheet_('AuditoriaLog', ['Email', 'FechaHora', 'Accion', 'DuracionMinutos'])); 
+    const cursosDataRaw = getDataAsJson(openOrCreateSheet_('Cursos', ['CursoID', 'Titulo', 'Modulo', 'Enlace', 'Activo']));
     
     // Normalizar ID y filtrar inactivos como en getCursos
     const cursosData = cursosDataRaw.map(c => ({
@@ -262,7 +262,7 @@ function getAuditData(email, role) {
     const e = normalizeEmail_(email);
     const r = safeStr_(role).toLowerCase();
 
-    const sheet = openSheet_('AuditoriaLog'); 
+    const sheet = openOrCreateSheet_('AuditoriaLog', ['Email', 'FechaHora', 'Accion', 'DuracionMinutos']);
     const data = sheet.getDataRange().getValues();
 
     const logs = data.slice(1).filter(row => row.some(v => v !== '' && v !== null)).map(row => ({
