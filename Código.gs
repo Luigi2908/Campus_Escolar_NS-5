@@ -194,19 +194,55 @@ function getDashboardMetrics(email, role) {
 
     const progData = getDataAsJson(openSheet_('Progreso'));
     const auditData = getDataAsJson(openSheet_('AuditoriaLog')); 
-    const cursosData = getDataAsJson(openSheet_('Cursos'));
+    const cursosDataRaw = getDataAsJson(openSheet_('Cursos'));
+    
+    // Normalizar ID y filtrar inactivos como en getCursos
+    const cursosData = cursosDataRaw.map(c => ({
+      ...c,
+      CursoID: c.CursoID || c.ID || c['#'] || Object.values(c)[0]
+    })).filter(c => {
+      const activo = String(c.Activo || 'Sí').trim().toLowerCase();
+      return activo !== 'no' && activo !== 'false' && activo !== '0' && activo !== 'inactivo';
+    });
 
     const privileged = (r === 'administrador' || r === 'gerente' || r === 'supervisor');
 
     const myProgress = privileged ? progData : progData.filter(p => normalizeEmail_(p.Email) === e);
     const myAudit = privileged ? auditData : auditData.filter(a => normalizeEmail_(a.Email) === e);
 
-    const completed = myProgress.filter(p => {
-      const estadoRaw = p.Estado || p['Estado (completado/pendiente)'] || Object.values(p)[2];
-      return safeStr_(estadoRaw).toLowerCase() === 'completado';
-    }).length;
+    // Agrupar cursos por Título
+    const grouped = {};
+    cursosData.forEach(c => {
+      const t = String(c.Titulo || c.Título || 'Sin Título').trim();
+      if (!grouped[t]) grouped[t] = { modulos: [] };
+      grouped[t].modulos.push(c);
+    });
 
-    const pending = Math.max(cursosData.length - completed, 0);
+    let completed = 0;
+    let pending = 0;
+
+    Object.keys(grouped).forEach(t => {
+      const modulos = grouped[t].modulos;
+      let allCompleted = true;
+
+      modulos.forEach(m => {
+        const userProg = myProgress.find(p => {
+          const pCid = String(p.CursoID || p.ID || p['Curso ID'] || p['#'] || Object.values(p)[1]);
+          return pCid === String(m.CursoID);
+        });
+        const estadoRaw = userProg ? (userProg.Estado || userProg['Estado (completado/pendiente)'] || Object.values(userProg)[2]) : 'pendiente';
+        if (safeStr_(estadoRaw).toLowerCase() !== 'completado') {
+          allCompleted = false;
+        }
+      });
+
+      if (allCompleted && modulos.length > 0) {
+        completed++;
+      } else {
+        pending++; 
+      }
+    });
+
     const avgScore = myProgress.length > 0 ? myProgress.reduce((acc, curr) => {
       const nota = curr.Nota || curr.Score || Object.values(curr)[3];
       return acc + safeNumber_(nota, 0);
@@ -215,7 +251,7 @@ function getDashboardMetrics(email, role) {
     const totalTime = myAudit.reduce((acc, curr) => acc + safeNumber_(curr.DuracionMinutos || curr.Duracion, 0), 0);
     const auditLog = myAudit.slice().sort((a, b) => new Date(b.FechaHora || b.Fecha) - new Date(a.FechaHora || a.Fecha)).slice(0, 5);
 
-    return { completedCourses: completed, pendingCourses: pending, totalCourses: cursosData.length, averageScore: avgScore.toFixed(1), timeSpent: totalTime, auditLog: auditLog };
+    return { completedCourses: completed, pendingCourses: pending, totalCourses: Object.keys(grouped).length, averageScore: avgScore.toFixed(1), timeSpent: totalTime, auditLog: auditLog };
   } catch (error) {
     return { completedCourses: 0, pendingCourses: 0, totalCourses: 0, averageScore: "0.0", timeSpent: 0, auditLog: [] };
   }
