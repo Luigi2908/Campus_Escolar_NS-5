@@ -239,3 +239,38 @@ function getAuditData(email, role) {
     return [];
   }
 }
+
+// ----------------- EVALUACIONES PRESENCIALES -----------------
+function guardarEvaluacion(datos) {
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    let sheet = ss.getSheetByName('Evaluaciones_Presenciales');
+    
+    if (!sheet) {
+      sheet = ss.insertSheet('Evaluaciones_Presenciales');
+      const headers = ['Timestamp', 'Email Estudiante', 'Curso ID', 'Curso Titulo', 'Instructor', 'Calificación General', 'Dominio del Tema', 'Materiales', 'Aplicabilidad', 'Comentarios'];
+      sheet.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight('bold');
+    }
+    
+    const rowData = [
+      new Date(),
+      normalizeEmail_(datos.email),
+      safeStr_(datos.cursoId),
+      safeStr_(datos.cursoTitulo),
+      safeStr_(datos.instructor),
+      safeNumber_(datos.rating, 0),
+      safeStr_(datos.dominio),
+      safeStr_(datos.materiales),
+      safeStr_(datos.aplicabilidad),
+      safeStr_(datos.comentarios)
+    ];
+    
+    sheet.appendRow(rowData);
+    
+    try { logAudit(datos.email, 'Evaluación enviada para curso: ' + datos.cursoId, 0); } catch(e){}
+    
+    return { success: true };
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
+}
