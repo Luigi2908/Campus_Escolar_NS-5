@@ -173,6 +173,7 @@ function saveQuizResult(email, cursoId, score, passed) {
       sheet.appendRow([e, cId, passed ? 'completado' : 'pendiente', sc, 1]);
     }
     try { logAudit(e, 'Quiz Realizado: ' + cId + ' (Nota: ' + sc + ')', 5); } catch(e){}
+    SpreadsheetApp.flush(); // IMPORTANT: Forzar escritura para que las siguientes lecturas estén actualizadas
     return { status: 'success', score: sc, passed: passed };
   } catch (error) {
     return { status: 'error', message: error.message };
