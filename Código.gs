@@ -150,27 +150,38 @@ function saveQuizResult(email, cursoId, score, passed) {
 
     const sheet = openOrCreateSheet_('Progreso', ['Email', 'CursoID', 'Estado', 'Nota', 'Intentos']);
     const data = sheet.getDataRange().getValues();
+    
+    if (data.length < 1) return { status: 'error', message: 'No headers' };
+    
+    const headers = data[0].map(h => String(h).trim().toLowerCase());
+    const emailIdx = headers.indexOf('email') !== -1 ? headers.indexOf('email') : (headers.indexOf('id') !== -1 ? headers.indexOf('id') : 0);
+    const cursoIdIdx = headers.indexOf('cursoid') !== -1 ? headers.indexOf('cursoid') : 1;
+    const estadoIdx = headers.indexOf('estado') !== -1 ? headers.indexOf('estado') : 2;
+    const notaIdx = headers.indexOf('nota') !== -1 ? headers.indexOf('nota') : (headers.indexOf('porcentaje') !== -1 ? headers.indexOf('porcentaje') : 3);
+    const intentosIdx = headers.indexOf('intentos') !== -1 ? headers.indexOf('intentos') : 4;
+
     let found = false;
 
     for (let i = 1; i < data.length; i++) {
-      const rowEmail = normalizeEmail_(data[i][0]);
-      const rowCid = String(data[i][1]);
+      const rowEmail = normalizeEmail_(data[i][emailIdx]);
+      const rowCid = String(data[i][cursoIdIdx]);
       if (rowEmail === e && rowCid === cId) {
-        const prevAttempts = safeNumber_(data[i][4], 0);
-        const attempts = prevAttempts + 1;
-        sheet.getRange(i + 1, 3).setValue(passed ? 'completado' : 'pendiente'); 
-        sheet.getRange(i + 1, 4).setValue(sc); 
-        sheet.getRange(i + 1, 5).setValue(attempts); 
+        const prevAttempts = safeNumber_(data[i][intentosIdx], 0);
+        sheet.getRange(i + 1, estadoIdx + 1).setValue(passed ? 'completado' : 'pendiente'); 
+        sheet.getRange(i + 1, notaIdx + 1).setValue(sc); 
+        sheet.getRange(i + 1, intentosIdx + 1).setValue(prevAttempts + 1); 
         found = true;
         break;
       }
     }
     if (!found) {
-      // Garantizar encabezados en fila 1 si está vacía
-      if (data.length === 0 || !data[0][0]) {
-        sheet.getRange(1, 1, 1, 5).setValues([['Email', 'CursoID', 'Estado', 'Nota', 'Intentos']]).setFontWeight('bold');
-      }
-      sheet.appendRow([e, cId, passed ? 'completado' : 'pendiente', sc, 1]);
+      const newRow = new Array(headers.length).fill('');
+      newRow[emailIdx] = e;
+      newRow[cursoIdIdx] = cId;
+      newRow[estadoIdx] = passed ? 'completado' : 'pendiente';
+      newRow[notaIdx] = sc;
+      newRow[intentosIdx] = 1;
+      sheet.appendRow(newRow);
     }
     try { logAudit(e, 'Quiz Realizado: ' + cId + ' (Nota: ' + sc + ')', 5); } catch(e){}
     SpreadsheetApp.flush(); // IMPORTANT: Forzar escritura para que las siguientes lecturas estén actualizadas
@@ -183,7 +194,20 @@ function saveQuizResult(email, cursoId, score, passed) {
 // ----------------- AUDITORÍA -----------------
 function logAudit(email, action, duration) {
   const sheet = openOrCreateSheet_('AuditoriaLog', ['Email', 'FechaHora', 'Accion', 'DuracionMinutos']);
-  sheet.appendRow([normalizeEmail_(email), new Date(), safeStr_(action), safeNumber_(duration, 0)]);
+  const headers = sheet.getDataRange().getValues()[0].map(h => String(h).trim().toLowerCase());
+  
+  const emailIdx = headers.indexOf('email') !== -1 ? headers.indexOf('email') : (headers.indexOf('id') !== -1 ? headers.indexOf('id') : 0);
+  const fechaIdx = headers.indexOf('fechahora') !== -1 ? headers.indexOf('fechahora') : (headers.indexOf('timestamp') !== -1 ? headers.indexOf('timestamp') : 1);
+  const accionIdx = headers.indexOf('accion') !== -1 ? headers.indexOf('accion') : 2;
+  const duracionIdx = headers.indexOf('duracionminutos') !== -1 ? headers.indexOf('duracionminutos') : (headers.indexOf('duracion') !== -1 ? headers.indexOf('duracion') : 3);
+  
+  const newRow = new Array(headers.length).fill('');
+  newRow[emailIdx] = normalizeEmail_(email);
+  newRow[fechaIdx] = new Date();
+  newRow[accionIdx] = safeStr_(action);
+  newRow[duracionIdx] = safeNumber_(duration, 0);
+  
+  sheet.appendRow(newRow);
 }
 
 // ----------------- DASHBOARD -----------------
