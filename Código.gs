@@ -118,6 +118,8 @@ function getCursos(userEmail) {
     });
 
     const progreso = getDataAsJson(openOrCreateSheet_('Progreso', ['Email', 'CursoID', 'Estado', 'Nota', 'Intentos'])).filter(p => normalizeEmail_(p.Email || p.ID || p.UserID || Object.values(p)[0]) === emailN);
+    const configQuizData = getDataAsJson(openOrCreateSheet_('ConfigQuiz', ['CursoID', 'TotalPreguntas', 'PuntajeMinimo', 'IntentosMax', 'TiempoLimiteMin', 'Aleatorio']));
+    const evalData = getDataAsJson(openOrCreateSheet_('Evaluaciones_Presenciales', ['Timestamp', 'Email Estudiante', 'Curso ID', 'Curso Titulo', 'Instructor', 'Calificación General', 'Dominio del Tema', 'Materiales', 'Aplicabilidad', 'Comentarios'])).filter(ev => normalizeEmail_(ev['Email Estudiante'] || ev.Email || ev.ID || Object.values(ev)[1]) === emailN);
 
     return cursos.map(c => {
       const userProg = progreso.find(p => {
@@ -126,14 +128,28 @@ function getCursos(userEmail) {
       });
       const estadoRaw = userProg ? (userProg.Estado || userProg['Estado (completado/pendiente)'] || Object.values(userProg)[2]) : 'pendiente';
       const estado = safeStr_(estadoRaw).toLowerCase();
-      const nota = safeNumber_(userProg ? (userProg.Nota || userProg.Score || Object.values(userProg)[3]) : 0, 0);
-      const intentos = safeNumber_(userProg ? (userProg.Intentos || userProg.Attempts || Object.values(userProg)[4]) : 0, 0);
+      const nota = safeNumber_(userProg ? (userProg.Nota || userProg.Score || userProg.Porcentaje || Object.values(userProg)[6] || Object.values(userProg)[3]) : 0, 0);
+      const intentos = safeNumber_(userProg ? (userProg.Intentos || userProg.Attempts || userProg.MaterialID || Object.values(userProg)[4]) : 0, 0);
+
+      const config = configQuizData.find(cq => {
+        const cqCid = String(cq.CursoID || cq['Curso ID'] || cq.ID || Object.values(cq)[0]);
+        return cqCid === String(c.CursoID);
+      });
+      const maxAttempts = safeNumber_(config ? (config.IntentosMax || config['Intentos Max'] || config.IntentosMaximos || Object.values(config)[3]) : 3, 3);
+
+      const isEvaluated = evalData.some(ev => {
+        const evCid = safeStr_(ev['Curso ID'] || ev.CursoID || Object.values(ev)[2]);
+        const evTitle = safeStr_(ev['Curso Titulo'] || ev.CursoTitulo || Object.values(ev)[3]);
+        return (evCid && String(evCid) === String(c.CursoID)) || (evTitle && evTitle.toLowerCase() === String(c.Titulo || c.Título || '').toLowerCase());
+      });
 
       return {
         ...c,
         status: estado || 'pendiente',
         score: nota,
-        attempts: intentos
+        attempts: intentos,
+        maxAttempts: maxAttempts,
+        evaluated: isEvaluated
       };
     });
   } catch (error) {

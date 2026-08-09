@@ -1210,9 +1210,21 @@
         document.getElementById('classroom-progress-bar').style.width = progress + '%';
         
         // Show Global Feedback Button if all modules are completed
+        const isEvaluated = gc.modulos.some(m => m.evaluated) || gc.evaluated;
         const feedbackBtn = document.getElementById('btn-open-feedback');
         if (isAllCompleted) {
           feedbackBtn.classList.remove('hidden');
+          if (isEvaluated) {
+            feedbackBtn.disabled = true;
+            feedbackBtn.className = 'w-full bg-gray-400 text-white px-4 py-2 rounded-lg text-sm font-bold opacity-75 cursor-not-allowed shadow';
+            feedbackBtn.innerHTML = '<i class="fas fa-check-double mr-2"></i> Curso Evaluado';
+            feedbackBtn.onclick = null;
+          } else {
+            feedbackBtn.disabled = false;
+            feedbackBtn.className = 'w-full bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition shadow cursor-pointer';
+            feedbackBtn.innerHTML = '<i class="fas fa-star mr-2"></i> Evaluar Curso';
+            feedbackBtn.onclick = () => openFeedbackModal();
+          }
         } else {
           feedbackBtn.classList.add('hidden');
         }
@@ -1282,10 +1294,13 @@
         typeEl.textContent = (tipo || 'recurso').toUpperCase();
         typeEl.className = 'text-xs font-bold px-2 py-1 rounded uppercase ' + (tipo === 'video' ? 'bg-indigo-100 text-indigo-700' : 'bg-red-100 text-red-700');
 
+        const attempts = Number(course.attempts || 0);
+        const maxAttempts = Number(course.maxAttempts || 3);
+
         document.getElementById('classroom-unit').textContent = course.Unidad || '-';
         document.getElementById('classroom-desc').textContent = course.Descripcion || '-';
         document.getElementById('classroom-score').textContent = Number(course.score || 0);
-        document.getElementById('classroom-attempts').textContent = Number(course.attempts || 0);
+        document.getElementById('classroom-attempts').textContent = attempts + ' / ' + maxAttempts;
 
         const frame = document.getElementById('classroom-frame');
         const embedUrl = getEmbedUrl(course.EnlaceContenido);
@@ -1307,11 +1322,21 @@
         };
 
         const btnQuiz = document.getElementById('btn-start-quiz');
-        btnQuiz.onclick = () => {
-          document.getElementById('modal').classList.remove('hidden');
-          document.getElementById('modal-title').textContent = 'Evaluación del Módulo: ' + (course.Unidad || '');
-          startQuiz(String(course.CursoID));
-        };
+        if (attempts >= maxAttempts) {
+          btnQuiz.disabled = true;
+          btnQuiz.className = 'w-full bg-gray-400 text-white px-4 py-2 rounded-lg text-sm font-bold opacity-75 cursor-not-allowed shadow';
+          btnQuiz.innerHTML = '<i class="fas fa-ban mr-2"></i> Límite de intentos alcanzado';
+          btnQuiz.onclick = null;
+        } else {
+          btnQuiz.disabled = false;
+          btnQuiz.className = 'w-full bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 transition shadow cursor-pointer';
+          btnQuiz.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Realizar evaluación';
+          btnQuiz.onclick = () => {
+            document.getElementById('modal').classList.remove('hidden');
+            document.getElementById('modal-title').textContent = 'Evaluación del Módulo: ' + (course.Unidad || '');
+            startQuiz(String(course.CursoID));
+          };
+        }
       }
 
       // ══════════════════════════════════════
@@ -1451,12 +1476,20 @@
           .withSuccessHandler(res => {
             // Actualizar caché local instantáneamente
             const c = coursesCache.find(x => String(x.CursoID) === String(cursoId));
-            if (c) c.status = passed ? 'completado' : 'pendiente';
+            if (c) {
+              c.status = passed ? 'completado' : 'pendiente';
+              c.score = Math.max(c.score || 0, score);
+              c.attempts = (c.attempts || 0) + 1;
+            }
             
             if (currentCourseTitle && groupedCoursesCache[currentCourseTitle]) {
                const gc = groupedCoursesCache[currentCourseTitle];
                const mc = gc.modulos.find(x => String(x.CursoID) === String(cursoId));
-               if (mc) mc.status = passed ? 'completado' : 'pendiente';
+               if (mc) {
+                 mc.status = passed ? 'completado' : 'pendiente';
+                 mc.score = Math.max(mc.score || 0, score);
+                 mc.attempts = (mc.attempts || 0) + 1;
+               }
             }
 
             const statusEl = document.getElementById('quiz-save-status');
@@ -2390,6 +2423,10 @@
             btn.innerHTML = 'Enviar Evaluación';
             if (res.success) {
               showToast('Evaluación enviada con éxito. ¡Gracias!', 'success');
+              if (currentCourseTitle && groupedCoursesCache[currentCourseTitle]) {
+                groupedCoursesCache[currentCourseTitle].evaluated = true;
+                groupedCoursesCache[currentCourseTitle].modulos.forEach(m => m.evaluated = true);
+              }
               closeFeedbackModal();
               navigate('dashboard');
             } else {
