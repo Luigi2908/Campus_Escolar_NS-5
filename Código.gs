@@ -284,7 +284,7 @@ function getDashboardMetrics(email, role) {
     });
 
     const avgScore = myProgress.length > 0 ? myProgress.reduce((acc, curr) => {
-      const nota = curr.Nota || curr.Score || Object.values(curr)[3];
+      const nota = curr.Nota || curr.Score || curr.Porcentaje || Object.values(curr)[6] || Object.values(curr)[3];
       return acc + safeNumber_(nota, 0);
     }, 0) / myProgress.length : 0;
 

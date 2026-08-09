@@ -303,7 +303,7 @@
               <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/30 rounded-full blur-2xl"></div>
               <p class="text-pastel-greenDark text-sm font-bold mb-1">Cursos Asignados</p>
               <div class="flex items-end justify-between">
-                <h3 class="text-4xl font-extrabold text-gray-800" id="kpi-time">-</h3> <!-- reusing ID for simplicity -->
+                <h3 class="text-4xl font-extrabold text-gray-800" id="kpi-assigned">0</h3>
                 <div class="w-12 h-12 bg-white/70 rounded-2xl flex items-center justify-center text-pastel-greenDark shadow-sm"><i class="fas fa-book fa-xl"></i></div>
               </div>
             </div>
@@ -313,7 +313,7 @@
               <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/30 rounded-full blur-2xl"></div>
               <p class="text-pastel-yellowDark text-sm font-bold mb-1">Tiempo Aprendizaje</p>
               <div class="flex items-end justify-between">
-                <h3 class="text-4xl font-extrabold text-gray-800">18h</h3>
+                <h3 class="text-4xl font-extrabold text-gray-800" id="kpi-time">0 min</h3>
                 <div class="w-12 h-12 bg-white/70 rounded-2xl flex items-center justify-center text-pastel-yellowDark shadow-sm"><i class="fas fa-clock fa-xl"></i></div>
               </div>
             </div>
@@ -1006,13 +1006,21 @@
       // STUDENT: DASHBOARD
       // ══════════════════════════════════════
       function loadDashboardData() {
-        google.script.run.withSuccessHandler(metrics => {
+        const renderMetrics = (metrics) => {
           const completed = Number(metrics.completedCourses) || 0;
-          const pending = Number(metrics.pendingCourses) || 0;
+          const totalAssigned = Number(metrics.totalCourses) || 0;
+          const pending = Number(metrics.pendingCourses) || Math.max(totalAssigned - completed, 0);
+          const timeMins = Number(metrics.timeSpent) || 0;
 
           animateValue("kpi-completed", 0, completed, 800);
           document.getElementById('kpi-score').textContent = metrics.averageScore ?? '0.0';
-          document.getElementById('kpi-time').textContent = `${Number(metrics.timeSpent) || 0} min`;
+          document.getElementById('kpi-assigned').textContent = totalAssigned;
+          
+          if (timeMins >= 60) {
+            document.getElementById('kpi-time').textContent = (timeMins / 60).toFixed(1) + 'h';
+          } else {
+            document.getElementById('kpi-time').textContent = timeMins + ' min';
+          }
 
           const logList = document.getElementById('activity-log-list');
           logList.innerHTML = '';
@@ -1038,7 +1046,15 @@
             data: { labels: ['Completado', 'Pendiente'], datasets: [{ data: [completed, pending], backgroundColor: ['#3B82F6', '#E5E7EB'], borderWidth: 0 }] },
             options: { cutout: '75%', responsive: true, maintainAspectRatio: false }
           });
-        }).getDashboardMetrics(currentUser.email, currentUser.role);
+        };
+
+        google.script.run
+          .withSuccessHandler(renderMetrics)
+          .withFailureHandler(err => {
+            console.warn('Dashboard fetch failed, using fallbacks', err);
+            renderMetrics({ completedCourses: 0, totalCourses: Object.keys(groupedCoursesCache).length, pendingCourses: Object.keys(groupedCoursesCache).length, averageScore: '0.0', timeSpent: 0, auditLog: [] });
+          })
+          .getDashboardMetrics(currentUser.email, currentUser.role);
       }
 
       // ══════════════════════════════════════
