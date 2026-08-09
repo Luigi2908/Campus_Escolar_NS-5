@@ -117,7 +117,7 @@ function getCursos(userEmail) {
       return activo !== 'no' && activo !== 'false' && activo !== '0' && activo !== 'inactivo';
     });
 
-    const progreso = getDataAsJson(openOrCreateSheet_('Progreso', ['Email', 'CursoID', 'Estado', 'Nota', 'Intentos'])).filter(p => normalizeEmail_(p.Email) === emailN);
+    const progreso = getDataAsJson(openOrCreateSheet_('Progreso', ['Email', 'CursoID', 'Estado', 'Nota', 'Intentos'])).filter(p => normalizeEmail_(p.Email || p.ID || p.UserID || Object.values(p)[0]) === emailN);
 
     return cursos.map(c => {
       const userProg = progreso.find(p => {
@@ -231,8 +231,8 @@ function getDashboardMetrics(email, role) {
 
     const privileged = (r === 'administrador' || r === 'gerente' || r === 'supervisor');
 
-    const myProgress = privileged ? progData : progData.filter(p => normalizeEmail_(p.Email) === e);
-    const myAudit = privileged ? auditData : auditData.filter(a => normalizeEmail_(a.Email) === e);
+    const myProgress = privileged ? progData : progData.filter(p => normalizeEmail_(p.Email || p.ID || p.UserID || Object.values(p)[0]) === e);
+    const myAudit = privileged ? auditData : auditData.filter(a => normalizeEmail_(a.Email || a.ID || a.UserID || Object.values(a)[0]) === e);
 
     // Agrupar cursos por Título
     const grouped = {};
