@@ -140,7 +140,10 @@ function getCursos(userEmail) {
       const isEvaluated = evalData.some(ev => {
         const evCid = safeStr_(ev['Curso ID'] || ev.CursoID || Object.values(ev)[2]);
         const evTitle = safeStr_(ev['Curso Titulo'] || ev.CursoTitulo || Object.values(ev)[3]);
-        return (evCid && String(evCid) === String(c.CursoID)) || (evTitle && evTitle.toLowerCase() === String(c.Titulo || c.Título || '').toLowerCase());
+        const cTituloTrim = String(c.Titulo || c.Título || '').trim().toLowerCase();
+        return (evCid && String(evCid) === String(c.CursoID)) || 
+               (evTitle && evTitle.toLowerCase() === cTituloTrim) ||
+               (evCid && evCid.toLowerCase() === cTituloTrim);
       });
 
       return {
