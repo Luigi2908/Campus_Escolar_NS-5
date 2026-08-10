@@ -292,7 +292,12 @@ function getDashboardMetrics(email, role) {
     }, 0) / myProgress.length : 0;
 
     const totalTime = myAudit.reduce((acc, curr) => acc + safeNumber_(curr.DuracionMinutos || curr.Duracion, 0), 0);
-    const auditLog = myAudit.slice().sort((a, b) => new Date(b.FechaHora || b.Fecha) - new Date(a.FechaHora || a.Fecha)).slice(0, 5);
+    const auditLog = myAudit.slice().sort((a, b) => new Date(b.FechaHora || b.Fecha) - new Date(a.FechaHora || a.Fecha)).slice(0, 5).map(l => ({
+       Usuario: l.Usuario || l.Email || '',
+       Fecha: (l.FechaHora || l.Fecha) instanceof Date ? (l.FechaHora || l.Fecha).toISOString() : String(l.FechaHora || l.Fecha || ''),
+       Accion: l.Accion || '',
+       Duracion: l.DuracionMinutos || l.Duracion || 0
+    }));
 
     return { completedCourses: completed, pendingCourses: pending, totalCourses: Object.keys(grouped).length, averageScore: avgScore.toFixed(1), timeSpent: totalTime, auditLog: auditLog };
   } catch (error) {
@@ -309,7 +314,10 @@ function getAuditData(email, role) {
     const data = sheet.getDataRange().getValues();
 
     const logs = data.slice(1).filter(row => row.some(v => v !== '' && v !== null)).map(row => ({
-        Usuario: normalizeEmail_(row[0]), Fecha: row[1], Accion: safeStr_(row[2]), Duracion: safeNumber_(row[3], 0)
+        Usuario: normalizeEmail_(row[0]), 
+        Fecha: row[1] instanceof Date ? row[1].toISOString() : String(row[1] || ''), 
+        Accion: safeStr_(row[2]), 
+        Duracion: safeNumber_(row[3], 0)
     }));
 
     const privileged = (r === 'administrador' || r === 'gerente' || r === 'supervisor');
